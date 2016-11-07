@@ -1,0 +1,5 @@
+name: FastAsyncRedstone
+main: com.boydti.far.FarMain
+version: 1.0
+authors: [Empire92]
+load: STARTUP
