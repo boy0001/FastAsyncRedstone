@@ -1,18 +1,18 @@
 package com.boydti.far;
 
+import com.boydti.far.blocks.Lamp;
+import com.boydti.far.blocks.Piston;
+import com.boydti.far.blocks.Wire;
+import com.boydti.fawe.FaweVersion;
+import com.google.common.collect.UnmodifiableIterator;
 import java.io.File;
-
+import java.io.InputStream;
+import java.util.Date;
 import net.minecraft.server.v1_10_R1.Block;
 import net.minecraft.server.v1_10_R1.Blocks;
 import net.minecraft.server.v1_10_R1.IBlockData;
 import net.minecraft.server.v1_10_R1.MinecraftKey;
-
 import org.bukkit.plugin.java.JavaPlugin;
-
-import com.boydti.far.blocks.Lamp;
-import com.boydti.far.blocks.Piston;
-import com.boydti.far.blocks.Wire;
-import com.google.common.collect.UnmodifiableIterator;
 
 public class FarMain extends JavaPlugin {
     
@@ -20,22 +20,47 @@ public class FarMain extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        RedstoneSettings.load(new File(getDataFolder(), "config.yml"));
-        provider = new QueueManager();
-        add(55, "redstone_wire", new Wire(provider));
-        add(123, "redstone_lamp", new Lamp(false, provider));
-        add(124, "lit_redstone_lamp", new Lamp(true, provider));
-        add(29, "sticky_piston", new Piston(true, provider).c("pistonStickyBase"));
-        add(33, "piston", new Piston(false, provider).c("pistonBase"));
-        
-        // sticky_piston
-        // piston
+        setupConfig();
 
-        ReflectionUtil.setStatic("REDSTONE_WIRE", Blocks.class, get("redstone_wire"));
-        ReflectionUtil.setStatic("REDSTONE_LAMP", Blocks.class, get("redstone_lamp"));
-        ReflectionUtil.setStatic("LIT_REDSTONE_LAMP", Blocks.class, get("lit_redstone_lamp"));
-        ReflectionUtil.setStatic("STICKY_PISTON", Blocks.class, get("sticky_piston"));
-        ReflectionUtil.setStatic("PISTON", Blocks.class, get("piston"));
+        this.provider = new QueueManager();
+
+        if (RedstoneSettings.OPTIMIZE_DEVICES.REDSTONE_WIRE) {
+            add(55, "redstone_wire", new Wire(provider));
+            ReflectionUtil.setStatic("REDSTONE_WIRE", Blocks.class, get("redstone_wire"));
+        }
+        if (RedstoneSettings.OPTIMIZE_DEVICES.REDSTONE_LAMP) {
+            add(123, "redstone_lamp", new Lamp(false, provider));
+            ReflectionUtil.setStatic("REDSTONE_LAMP", Blocks.class, get("redstone_lamp"));
+        }
+        if (RedstoneSettings.OPTIMIZE_DEVICES.LIT_REDSTONE_LAMP) {
+            add(124, "lit_redstone_lamp", new Lamp(true, provider));
+            ReflectionUtil.setStatic("LIT_REDSTONE_LAMP", Blocks.class, get("lit_redstone_lamp"));
+        }
+        if (RedstoneSettings.OPTIMIZE_DEVICES.STICKY_PISTON) {
+            add(29, "sticky_piston", new Piston(true, provider).c("pistonStickyBase"));
+            ReflectionUtil.setStatic("STICKY_PISTON", Blocks.class, get("sticky_piston"));
+        }
+        if (RedstoneSettings.OPTIMIZE_DEVICES.PISTON) {
+            add(33, "piston", new Piston(false, provider).c("pistonBase"));
+            ReflectionUtil.setStatic("PISTON", Blocks.class, get("piston"));
+        }
+    }
+
+    public void setupConfig() {
+        File file = new File(getDataFolder(), "config.yml");
+        RedstoneSettings.load(file);
+        RedstoneSettings.save(file);
+        RedstoneSettings.PLATFORM = "bukkit";
+        try {
+            InputStream stream = getClass().getResourceAsStream("/fawe.properties");
+            java.util.Scanner scanner = new java.util.Scanner(stream).useDelimiter("\\A");
+            String versionString = scanner.next().trim();
+            scanner.close();
+            FaweVersion version = new FaweVersion(versionString);
+            RedstoneSettings.DATE = new Date(100 + version.year, version.month, version.day).toGMTString();
+            RedstoneSettings.BUILD = "http://ci.athion.net/job/FastAsyncRedstone/" + version.build;
+            RedstoneSettings.COMMIT = "https://github.com/boy0001/FastAsyncWorldedit/commit/" + Integer.toHexString(version.hash);
+        } catch (Throwable ignore) {}
     }
     
     private static Block get(String s) {

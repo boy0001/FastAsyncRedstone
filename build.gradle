@@ -90,6 +90,7 @@ clean{
 processResources {
     from('src/main/resources') {
         include 'plugin.yml'
+        include 'fawe.properties'
         expand(
             name: project.name,
             version: project.version
