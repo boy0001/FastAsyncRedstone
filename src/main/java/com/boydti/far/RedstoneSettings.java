@@ -31,7 +31,7 @@ public class RedstoneSettings extends Config {
         " - Increase to reduce CPU usage",
         " - Lower to see changes sooner",
         })
-        public static int INTERVAL = 19;
+        public static int INTERVAL = 6;
     }
 
     public static class OPTIMIZE_DEVICES {
@@ -39,8 +39,9 @@ public class RedstoneSettings extends Config {
         public static boolean REDSTONE_LAMP = true;
         public static boolean LIT_REDSTONE_LAMP = true;
         public static boolean STICKY_PISTON = true;
-        @Comment("Pistons are buggy right now")
-        public static boolean PISTON = false;
+        public static boolean PISTON = true;
+        public static boolean UNLIT_REDSTONE_TORCH = true;
+        public static boolean REDSTONE_TORCH = true;
     }
 
     public static void save(File file) {

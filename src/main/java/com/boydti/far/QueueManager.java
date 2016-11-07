@@ -10,14 +10,15 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.server.v1_10_R1.*;
-import net.minecraft.server.v1_10_R1.BlockPosition.MutableBlockPosition;
 
 public class QueueManager {
     private HashMap<World, Map<Long, Character>> blockQueueWorlds = new HashMap<>();
     private Map<World, Map<Long, Map<Short, Object>>> lightQueueWorlds = new ConcurrentHashMap<>(8, 0.9f, 1);
 
-    private final MutableBlockPosition mutable = new BlockPosition.MutableBlockPosition();
     private volatile boolean updateBlocks;
+    public final BlockPos mutableBlockPos = new BlockPos();
+    public final BlockPosition mutable = new BlockPosition.MutableBlockPosition();
+    public final Object present = new Object();
 
     public QueueManager() {
         TaskManager.IMP.repeat(new Runnable() {
@@ -55,7 +56,7 @@ public class QueueManager {
                     }
                 });
             }
-        }, 19);
+        }, RedstoneSettings.QUEUE.INTERVAL);
     }
     
     public void updateBlockLight(NMSMappedFaweQueue queue, Map<Long, Map<Short, Object>> map) {
@@ -86,7 +87,6 @@ public class QueueManager {
                 int z = ((hi >> 4) & 0xF) + bz;
                 int lcx = x & 0xF;
                 int lcz = z & 0xF;
-                mutable.c(lcx, y, lcz);
                 int oldLevel = queue.getEmmittedLight(x, y, z);
                 int newLevel = queue.getBrightness(x, y, z);
                 if (oldLevel != newLevel) {
@@ -136,14 +136,16 @@ public class QueueManager {
         if (current != 0 && current < currentLight) {
             world.setBlockLight(x, y, z, 0);
             if (current > 1) {
-                if (!visited.containsKey(mutable)) {
+                mutableBlockPos.set(x, y, z);
+                if (!visited.containsKey(mutableBlockPos)) {
                     IntegerTrio index = new IntegerTrio(x, y, z);
                     visited.put(index, present);
                     queue.add(new Object[] { index, current });
                 }
             }
         } else if (current >= currentLight) {
-            if (!spreadVisited.containsKey(mutable)) {
+            mutableBlockPos.set(x, y, z);
+            if (!spreadVisited.containsKey(mutableBlockPos)) {
                 IntegerTrio index = new IntegerTrio(x, y, z);
                 spreadVisited.put(index, present);
                 spreadQueue.add(index);
@@ -158,7 +160,8 @@ public class QueueManager {
             int current = world.getEmmittedLight(x, y, z);
             if (current < currentLight) {
                 world.setBlockLight(x, y, z, currentLight);
-                if (!visited.containsKey(mutable)) {
+                mutableBlockPos.set(x, y, z);
+                if (!visited.containsKey(mutableBlockPos)) {
                     visited.put(new IntegerTrio(x, y, z), present);
                     if (currentLight > 1) {
                         queue.add(new IntegerTrio(x, y, z));
@@ -177,8 +180,6 @@ public class QueueManager {
         return map;
     }
     
-    private final Object present = new Object();
-
     private final short localBlockHash(int x, int y, int z) {
         byte hi = (byte) ((x & 15) + ((z & 15) << 4));
         byte lo = (byte) y;
@@ -219,7 +220,7 @@ public class QueueManager {
         Chunk chunk = world.getChunkAtWorldCoords(pos);
         IBlockData previous = chunk.a(pos, state);
         if (light) {
-            int distance = Math.max(state.d(), previous.d());
+            int distance = Math.max(state.d(), previous == null ? 0 : previous.d());
             for (int cxx = (x - distance) >> 4; cxx <= (x + distance) >> 4; cxx++) {
                 for (int czz = (z - distance) >> 4; czz <= (z + distance) >> 4; czz++) {
                     for (int cyy = Math.max(0, (y - distance) >> 4); cyy <= (y + distance) >> 4 && cyy < 16; cyy++) {
@@ -227,19 +228,15 @@ public class QueueManager {
                     }
                 }
             }
-            addLightUpdate(world, x, pos.getY(), z);
+            addLightUpdate(world, x, y, z);
         }
         if (previous != null && physics != 0) {
-            //            world.notifyAndUpdatePhysics(pos, chunk, previous, state, physics);
-            world.e(pos.north(), block);
-            world.e(pos.east(), block);
-            world.e(pos.south(), block);
-            world.e(pos.west(), block);
-            if (pos.getY() > 0) {
-                world.e(pos.down(), block);
-            }
-            if (pos.getY() < 255) {
-                world.e(pos.up(), block);
+            for (int yy = Math.max(0, y - 1); yy <= y + 1 && yy < 256; yy++) {
+                for (int xx = x - 1; xx <= x + 1; xx++) {
+                    for (int zz = z - 1; zz <= z + 1; zz++) {
+                        world.e(mutable.a(xx, yy, zz), block);
+                    }
+                }
             }
         }
     }

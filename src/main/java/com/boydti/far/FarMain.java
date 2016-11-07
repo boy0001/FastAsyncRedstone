@@ -2,6 +2,7 @@ package com.boydti.far;
 
 import com.boydti.far.blocks.Lamp;
 import com.boydti.far.blocks.Piston;
+import com.boydti.far.blocks.Torch;
 import com.boydti.far.blocks.Wire;
 import com.boydti.fawe.FaweVersion;
 import com.google.common.collect.UnmodifiableIterator;
@@ -37,13 +38,22 @@ public class FarMain extends JavaPlugin {
             ReflectionUtil.setStatic("LIT_REDSTONE_LAMP", Blocks.class, get("lit_redstone_lamp"));
         }
         if (RedstoneSettings.OPTIMIZE_DEVICES.STICKY_PISTON) {
-            add(29, "sticky_piston", new Piston(true, provider).c("pistonStickyBase"));
+            add(29, "sticky_piston", new Piston(true, provider));
             ReflectionUtil.setStatic("STICKY_PISTON", Blocks.class, get("sticky_piston"));
         }
         if (RedstoneSettings.OPTIMIZE_DEVICES.PISTON) {
-            add(33, "piston", new Piston(false, provider).c("pistonBase"));
+            add(33, "piston", new Piston(false, provider));
             ReflectionUtil.setStatic("PISTON", Blocks.class, get("piston"));
         }
+        if (RedstoneSettings.OPTIMIZE_DEVICES.UNLIT_REDSTONE_TORCH) {
+            add(75, "unlit_redstone_torch", new Torch(provider, false));
+            ReflectionUtil.setStatic("UNLIT_REDSTONE_TORCH", Blocks.class, get("unlit_redstone_torch"));
+        }
+        if (RedstoneSettings.OPTIMIZE_DEVICES.REDSTONE_TORCH) {
+            add(76, "redstone_torch", new Torch(provider, true));
+            ReflectionUtil.setStatic("REDSTONE_TORCH", Blocks.class, get("redstone_torch"));
+        }
+
     }
 
     public void setupConfig() {

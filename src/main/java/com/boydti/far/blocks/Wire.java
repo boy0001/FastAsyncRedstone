@@ -1,36 +1,17 @@
 package com.boydti.far.blocks;
 
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
-import net.minecraft.server.v1_10_R1.BaseBlockPosition;
-import net.minecraft.server.v1_10_R1.Block;
-import net.minecraft.server.v1_10_R1.BlockDiodeAbstract;
-import net.minecraft.server.v1_10_R1.BlockPiston;
-import net.minecraft.server.v1_10_R1.BlockPosition;
+import com.boydti.far.QueueManager;
+import com.boydti.fawe.object.RunnableVal;
+import java.util.*;
+import net.minecraft.server.v1_10_R1.*;
 import net.minecraft.server.v1_10_R1.BlockPosition.MutableBlockPosition;
-import net.minecraft.server.v1_10_R1.BlockRedstoneComparator;
-import net.minecraft.server.v1_10_R1.BlockRedstoneTorch;
-import net.minecraft.server.v1_10_R1.BlockRedstoneWire;
-import net.minecraft.server.v1_10_R1.EnumDirection;
-import net.minecraft.server.v1_10_R1.IBlockAccess;
-import net.minecraft.server.v1_10_R1.IBlockData;
-import net.minecraft.server.v1_10_R1.IBlockState;
-import net.minecraft.server.v1_10_R1.SoundEffectType;
-import net.minecraft.server.v1_10_R1.World;
-
 import org.apache.commons.lang3.ArrayUtils;
 import org.bukkit.event.block.BlockRedstoneEvent;
-
-import com.boydti.far.QueueManager;
-import com.boydti.far.ReflectionUtil;
-import com.boydti.fawe.object.RunnableVal;
 
 public class Wire extends BlockRedstoneWire {
     private final LinkedHashSet<BlockPosition> turnOff;
     private final LinkedHashSet<BlockPosition> turnOn;
-    private final LinkedHashSet<BlockPosition> updatedRedstoneWire;
+    private final LinkedHashSet<BlockPosition> updatedRedstone;
     private static final EnumDirection[] facingsHorizontal;
     private static final EnumDirection[] facingsVertical;
     private static final EnumDirection[] facings;
@@ -42,7 +23,7 @@ public class Wire extends BlockRedstoneWire {
         this.provider = provider;
         this.turnOff = new LinkedHashSet<>();
         this.turnOn = new LinkedHashSet<>();
-        this.updatedRedstoneWire = new LinkedHashSet<>();
+        this.updatedRedstone = new LinkedHashSet<>();
         this.g = true;
         this.c(0.0f);
         this.a(SoundEffectType.d);
@@ -106,20 +87,20 @@ public class Wire extends BlockRedstoneWire {
     }
 
     private static int tick;
-    
+
     private void handleUpdate(final World world, final BlockPosition blockposition, final IBlockData iblockdata) {
         tick++;
-        LinkedHashSet<BlockPosition> toUpdate = new LinkedHashSet<>();
+        LinkedHashSet<BlockPosition> toUpdate = new LinkedHashSet<BlockPosition>();
         this.calculateCurrentChanges(world, blockposition, new RunnableVal<BlockPosition>() {
             @Override
             public void run(BlockPosition pos) {
-                if (!updatedRedstoneWire.add(pos)) {
+                if (!updatedRedstone.add(pos)) {
                     return;
                 }
                 addBlocksNeedingUpdate(world, pos, new RunnableVal<BlockPosition>() {
                     @Override
                     public void run(BlockPosition pos2) {
-                        if (updatedRedstoneWire.contains(pos2)) {
+                        if (updatedRedstone.contains(pos2) || toUpdate.contains(pos2)) {
                             return;
                         }
                         pos2 = getImmutable(pos2);
@@ -128,51 +109,54 @@ public class Wire extends BlockRedstoneWire {
                 });
             }
         });
-        toUpdate.removeAll(updatedRedstoneWire);
-        if (!toUpdate.isEmpty()) {
-            for (BlockPosition pos : toUpdate) {
-                updatedRedstoneWire.add(pos);
+        BlockPosition[] array = toUpdate.toArray(new BlockPosition[toUpdate.size()]);
+        for (int i = array.length - 1; i >= 0; i--) {
+            BlockPosition pos = array[i];
+            if (updatedRedstone.add(pos)) {
                 doPhysics(world, pos);
             }
         }
         if (--tick == 0) {
-            updatedRedstoneWire.clear();
+            updatedRedstone.clear();
         }
     }
-    
+
     public void doPhysics(World world, BlockPosition pos) {
-        //        count++;
-        world.e(pos, Wire.this);
+        world.e(pos, this);
     }
     
-    //    private void handleUpdate(World world, BlockPosition blockposition, IBlockData iblockdata) {
-    //        calculateCurrentChanges(world, blockposition, new RunnableVal<BlockPosition>() {
-    //            @Override
-    //            public void run(BlockPosition arg0) {
-    //                updatedRedstoneWire.add(arg0);
-    //            }
-    //        });
-    //        
-    //        Set<BlockPosition> blocksNeedingUpdate = Sets.newLinkedHashSet();
-    //        for (Iterator localIterator = this.updatedRedstoneWire.iterator(); localIterator.hasNext();) {
-    //            BlockPosition posi = (BlockPosition) localIterator.next();
-    //            addBlocksNeedingUpdateOld(world, posi, blocksNeedingUpdate);
-    //        }
-    //        BlockPosition posi;
-    //        Object it = Lists.newLinkedList(this.updatedRedstoneWire).descendingIterator();
-    //        while (((Iterator) it).hasNext()) {
-    //            addAllSurroundingBlocksOld((BlockPosition) ((Iterator) it).next(), blocksNeedingUpdate);
-    //        }
-    //        blocksNeedingUpdate.removeAll(this.updatedRedstoneWire);
-    //
-    //        this.updatedRedstoneWire.clear();
-    //        for (BlockPosition pos2 : blocksNeedingUpdate) {
-    //            world.e(pos2, this);
-    //        }
-    //    }
+//    private void handleUpdate(World world, BlockPosition blockposition, IBlockData iblockdata) {
+//        calculateCurrentChanges(world, blockposition, new RunnableVal<BlockPosition>() {
+//            @Override
+//            public void run(BlockPosition arg0) {
+//                updatedRedstoneWire.add(arg0);
+//            }
+//        });
+//
+//        Set<BlockPosition> blocksNeedingUpdate = Sets.newLinkedHashSet();
+//        for (Iterator localIterator = this.updatedRedstoneWire.iterator(); localIterator.hasNext();) {
+//            BlockPosition posi = (BlockPosition) localIterator.next();
+//            addBlocksNeedingUpdateOld(world, posi, blocksNeedingUpdate);
+//        }
+//        BlockPosition posi;
+//        Object it = Lists.newLinkedList(this.updatedRedstoneWire).descendingIterator();
+//        while (((Iterator) it).hasNext()) {
+//            addAllSurroundingBlocksOld((BlockPosition) ((Iterator) it).next(), blocksNeedingUpdate);
+//        }
+//        blocksNeedingUpdate.removeAll(this.updatedRedstoneWire);
+//
+//        this.updatedRedstoneWire.clear();
+//        for (BlockPosition pos2 : blocksNeedingUpdate) {
+//            world.e(pos2, this);
+//        }
+//    }
 
-    private BlockPosition add(BaseBlockPosition pos1, BaseBlockPosition pos2) {
+    private BlockPosition add(MutableBlockPosition pos, BaseBlockPosition pos1, BaseBlockPosition pos2) {
         return pos.c(pos1.getX() + pos2.getX(), pos1.getY() + pos2.getY(), pos1.getZ() + pos2.getZ());
+    }
+
+    private BlockPosition subtract(MutableBlockPosition pos, BaseBlockPosition pos1, BaseBlockPosition pos2) {
+        return pos.c(pos1.getX() - pos2.getX(), pos1.getY() - pos2.getY(), pos1.getZ() - pos2.getZ());
     }
     
     private void calculateCurrentChanges(World world, BlockPosition blockposition, RunnableVal<BlockPosition> onEach) {
@@ -280,7 +264,7 @@ public class Wire extends BlockRedstoneWire {
     private int getSurroundingWirePower(final World worldIn, final BlockPosition pos) {
         int wirePower = 0;
         for (EnumDirection enumfacing : EnumDirection.EnumDirectionLimit.HORIZONTAL) {
-            BlockPosition offsetPos = pos.shift(enumfacing);
+            BlockPosition offsetPos = shift(mpos2, pos, enumfacing, 1);
             
             wirePower = getPower(worldIn, offsetPos, wirePower);
             if ((worldIn.getType(offsetPos).l()) && (!worldIn.getType(pos.up()).l())) {
@@ -291,16 +275,80 @@ public class Wire extends BlockRedstoneWire {
         }
         return wirePower;
     }
-    
+
+//    private void addBlocksNeedingUpdate(final World worldIn, final BlockPosition pos, RunnableVal<BlockPosition> onEach) {
+//        for (final EnumDirection facing : Wire.facings) {
+//            final BlockPosition offsetPos = pos.shift(facing);
+//            boolean shouldPower = facing == EnumDirection.DOWN || shouldPower(worldIn, pos, facing.opposite());
+//            if (shouldPower) {
+//                if ((facing.k().c() && this.canBlockBePoweredFromSide(worldIn.getType(offsetPos), facing, true))) {
+//                    onEach.run(offsetPos);
+//                }
+//            }
+//        }
+//    }
     private void addBlocksNeedingUpdate(final World worldIn, final BlockPosition pos, RunnableVal<BlockPosition> onEach) {
-        for (final EnumDirection facing : Wire.facings) {
-            final BlockPosition offsetPos = pos.shift(facing);
-            boolean shouldPower = facing == EnumDirection.DOWN || shouldPower(worldIn, pos, facing.opposite());
-            if (shouldPower) {
-                if ((facing.k().c() && this.canBlockBePoweredFromSide(worldIn.getType(offsetPos), facing, true))) {
+        for (BaseBlockPosition facing : Wire.surroundingBlocksOffset) {
+            BlockPosition offsetPos = add(mpos3, pos, facing);
+            if (offsetPos.getY() >= 0 && offsetPos.getY() < 256) {
+                if (canBlockBePowered(worldIn.getType(offsetPos))) {
                     onEach.run(offsetPos);
                 }
             }
+        }
+    }
+
+    public boolean canBlockBePowered(IBlockData state) {
+        Block block = state.getBlock();
+        switch (Block.getId(block)) {
+            case 23: // dispensor
+            case 158: // dropper
+            case 25:
+            // piston
+            case 29:
+            case 33:
+//                return state.get(BlockPiston.FACING) != side.opposite();
+            // tnt
+            case 44:
+            // door
+            case 96: // trapdoor
+            case 167:
+            case 107: // fence
+            case 183:
+            case 184:
+            case 185:
+            case 186:
+            case 187:
+            case 64: // door
+            case 71:
+            case 193:
+            case 194:
+            case 195:
+            case 196:
+            case 197:
+            // diode
+            case 93:
+            case 94:
+            // torch
+            case 75:
+            case 76:
+            // comparator
+            case 149:
+            case 150:
+            // lamp
+            case 123:
+            case 124:
+            // rail
+            case 27:
+            // BUD
+            case 73: // ore
+            case 74:
+            case 8: // water
+            case 9:
+            case 34: // piston
+                return true;
+            default:
+                return false;
         }
     }
 
@@ -316,7 +364,8 @@ public class Wire extends BlockRedstoneWire {
                 // piston
             case 29:
             case 33:
-                return state.get(BlockPiston.FACING) != side.opposite();
+                return true;
+//                return state.get(BlockPiston.FACING) != side.opposite();
                 // tnt
             case 44:
                 return true;
@@ -340,24 +389,26 @@ public class Wire extends BlockRedstoneWire {
                 // diode
             case 93:
             case 94:
-                if (state.get(BlockDiodeAbstract.FACING) != side.opposite()) {
-                    return true;
-                }
+//                if (state.get(BlockDiodeAbstract.FACING) != side.opposite()) {
+//                    return true;
+//                }
                 return true;
                 // torch
             case 75:
             case 76:
-                if (!isWire && state.get(BlockRedstoneTorch.FACING) == side) {
-                    return true;
-                }
-                break;
+//                if (!isWire && state.get(BlockRedstoneTorch.FACING) == side) {
+//                    return true;
+//                }
+//                break;
+                return true;
                 // comparator
             case 149:
             case 150:
-                if (state.get(BlockDiodeAbstract.FACING) != side.opposite() && isWire && (state.get(BlockRedstoneComparator.FACING).k() != side.k()) && (side.k().c())) {
-                    return true;
-                }
-                break;
+//                if (state.get(BlockDiodeAbstract.FACING) != side.opposite() && isWire && (state.get(BlockRedstoneComparator.FACING).k() != side.k()) && (side.k().c())) {
+//                    return true;
+//                }
+//                break;
+                return true;
                 // lamp
             case 123:
             case 124:
@@ -375,7 +426,7 @@ public class Wire extends BlockRedstoneWire {
             default:
                 return false;
         }
-        return false;
+//        return false;
     }
     
     private IBlockData setWireState(final World worldIn, final BlockPosition pos, IBlockData state, final int power) {
@@ -383,10 +434,16 @@ public class Wire extends BlockRedstoneWire {
         provider.update(worldIn, pos, state, Wire.this, false, 0);
         return state;
     }
-    
-    private static MutableBlockPosition pos = new MutableBlockPosition();
-    
+
+    private static MutableBlockPosition mpos1 = new MutableBlockPosition();
+    private static MutableBlockPosition mpos2 = new MutableBlockPosition();
+    private static MutableBlockPosition mpos3 = new MutableBlockPosition();
+
     private static BlockPosition shift(BaseBlockPosition blockPosition, EnumDirection dir, int amount) {
+        return shift(mpos1, blockPosition, dir, amount);
+    }
+
+    private static BlockPosition shift(MutableBlockPosition pos, BaseBlockPosition blockPosition, EnumDirection dir, int amount) {
         if (dir == null) {
             return pos.c(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
         }
@@ -514,17 +571,20 @@ public class Wire extends BlockRedstoneWire {
         facingsVertical = new EnumDirection[] { EnumDirection.DOWN, EnumDirection.UP };
         facings = (EnumDirection[]) ArrayUtils.addAll((Object[]) Wire.facingsVertical, (Object[]) Wire.facingsHorizontal);
         final Set<BaseBlockPosition> set = new LinkedHashSet<>();
-        for (final EnumDirection facing : Wire.facings) {
-            set.add(ReflectionUtil.<BaseBlockPosition> getOfT((Object) facing, BaseBlockPosition.class));
-        }
-        for (final EnumDirection facing2 : Wire.facings) {
-            final BaseBlockPosition v1 = ReflectionUtil.<BaseBlockPosition> getOfT(facing2, BaseBlockPosition.class);
-            for (final EnumDirection facing3 : Wire.facings) {
-                final BaseBlockPosition v2 = ReflectionUtil.<BaseBlockPosition> getOfT(facing3, BaseBlockPosition.class);
-                set.add(new BlockPosition(v1.getX() + v2.getX(), v1.getY() + v2.getY(), v1.getZ() + v2.getZ()));
-            }
-        }
-        set.remove(BlockPosition.ZERO);
+        set.add(new BlockPosition(1, 0, 0));
+        set.add(new BlockPosition(-1, 0, 0));
+        set.add(new BlockPosition(0, 1, 0));
+        set.add(new BlockPosition(0, -1, 0));
+        set.add(new BlockPosition(1, 1, 0));
+        set.add(new BlockPosition(-1, 1, 0));
+        set.add(new BlockPosition(1, -1, 0));
+        set.add(new BlockPosition(-1, -1, 0));
+        set.add(new BlockPosition(0, 1, 1));
+        set.add(new BlockPosition(0, 1, -1));
+        set.add(new BlockPosition(0, -1, 1));
+        set.add(new BlockPosition(0, -1, -1));
+        set.add(new BlockPosition(0, 0, 1));
+        set.add(new BlockPosition(0, 0, -1));
         surroundingBlocksOffset = set.<BaseBlockPosition> toArray(new BaseBlockPosition[set.size()]);
     }
 }
