@@ -18,7 +18,11 @@ public class RedstoneSettings extends Config {
     @Final
     public static String PLATFORM = null; // These values are set from FAWE before loading
 
-    @Comment("Configure how the async redstone queue works")
+    @Comment({
+            "Queues cosmetic changes and performs async",
+            " - Redstone might be alternating every tick",
+            " - Players don't need to see every change"
+    })
     public static class QUEUE {
         @Comment({
         "Configure the interval for the async queue",
@@ -35,7 +39,8 @@ public class RedstoneSettings extends Config {
         public static boolean REDSTONE_LAMP = true;
         public static boolean LIT_REDSTONE_LAMP = true;
         public static boolean STICKY_PISTON = true;
-        public static boolean PISTON = true;
+        @Comment("Pistons are buggy right now")
+        public static boolean PISTON = false;
     }
 
     public static void save(File file) {
