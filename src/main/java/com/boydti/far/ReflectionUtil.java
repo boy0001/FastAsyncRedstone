@@ -25,16 +25,26 @@ public class ReflectionUtil {
         }
         throw new IllegalArgumentException("No field: " + name);
     }
+
+    public static void setAccessible(Field field) {
+        try {
+            field.setAccessible(true);
+            if (Modifier.isFinal(field.getModifiers())) {
+                Field modifiersField = Field.class.getDeclaredField("modifiers");
+                modifiersField.setAccessible(true);
+                modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+            }
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+    }
     
     public static void setStatic(final String name, final Class<?> clazz, final Object val) {
         try {
             final Field field = clazz.getDeclaredField(name);
-            field.setAccessible(true);
-            if (Modifier.isFinal(field.getModifiers())) {
-                final Field modifiersField = Field.class.getDeclaredField("modifiers");
-                modifiersField.setAccessible(true);
-                modifiersField.setInt(field, field.getModifiers() & 0xFFFFFFEF);
-            }
+            setAccessible(field);
             field.set(null, val);
         } catch (ReflectiveOperationException ex) {
             ex.printStackTrace();

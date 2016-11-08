@@ -18,6 +18,15 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class FarMain extends JavaPlugin {
     
     private QueueManager provider;
+    private static FarMain instance;
+
+    public FarMain() {
+        instance = this;
+    }
+
+    public static FarMain get() {
+        return instance;
+    }
 
     @Override
     public void onEnable() {
@@ -26,8 +35,12 @@ public class FarMain extends JavaPlugin {
         this.provider = new QueueManager();
 
         if (RedstoneSettings.OPTIMIZE_DEVICES.REDSTONE_WIRE) {
-            add(55, "redstone_wire", new Wire(provider));
-            ReflectionUtil.setStatic("REDSTONE_WIRE", Blocks.class, get("redstone_wire"));
+            try {
+                add(55, "redstone_wire", new Wire(provider));
+                ReflectionUtil.setStatic("REDSTONE_WIRE", Blocks.class, get("redstone_wire"));
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            }
         }
         if (RedstoneSettings.OPTIMIZE_DEVICES.REDSTONE_LAMP) {
             add(123, "redstone_lamp", new Lamp(false, provider));

@@ -1,12 +1,17 @@
 package com.boydti.far.blocks;
 
+import com.boydti.far.FarMain;
+import com.boydti.far.MutableBlockRedstoneEvent;
 import com.boydti.far.QueueManager;
+import com.boydti.far.ReflectionUtil;
 import com.boydti.fawe.object.RunnableVal;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import net.minecraft.server.v1_10_R1.*;
 import net.minecraft.server.v1_10_R1.BlockPosition.MutableBlockPosition;
 import org.apache.commons.lang3.ArrayUtils;
-import org.bukkit.event.block.BlockRedstoneEvent;
+import org.bukkit.Bukkit;
 
 public class Wire extends BlockRedstoneWire {
     private final LinkedHashSet<BlockPosition> turnOff;
@@ -18,8 +23,9 @@ public class Wire extends BlockRedstoneWire {
     private static final BaseBlockPosition[] surroundingBlocksOffset;
     private boolean g;
     private final QueueManager provider;
-    
-    public Wire(QueueManager provider) {
+    private final MutableBlockRedstoneEvent event;
+
+    public Wire(QueueManager provider) throws NoSuchFieldException {
         this.provider = provider;
         this.turnOff = new LinkedHashSet<>();
         this.turnOn = new LinkedHashSet<>();
@@ -29,8 +35,15 @@ public class Wire extends BlockRedstoneWire {
         this.a(SoundEffectType.d);
         this.c("redstoneDust");
         this.q();
+        this.event = new MutableBlockRedstoneEvent();
+        Bukkit.getServer().getScheduler().runTask(FarMain.get(), new Runnable() {
+            @Override
+            public void run() {
+                Wire.this.event.recalculateListeners();
+            }
+        });
     }
-    
+
     private EnumDirection getDirection(int dx, int dy, int dz) {
         switch (dx) {
             case -1:
@@ -158,9 +171,9 @@ public class Wire extends BlockRedstoneWire {
     private BlockPosition subtract(MutableBlockPosition pos, BaseBlockPosition pos1, BaseBlockPosition pos2) {
         return pos.c(pos1.getX() - pos2.getX(), pos1.getY() - pos2.getY(), pos1.getZ() - pos2.getZ());
     }
-    
+
     private void calculateCurrentChanges(World world, BlockPosition blockposition, RunnableVal<BlockPosition> onEach) {
-        if (world.getType(blockposition).getBlock() == this) {
+        if (provider.getTypeFast(world, blockposition).getBlock() == this) {
             this.turnOff.add(blockposition);
         } else {
             checkSurroundingWires(world, blockposition);
@@ -169,7 +182,7 @@ public class Wire extends BlockRedstoneWire {
             Iterator<BlockPosition> iter = turnOff.iterator();
             final BlockPosition pos = iter.next();
             iter.remove();
-            IBlockData state = world.getType(pos);
+            IBlockData state = provider.getTypeFast(world, pos);
             int oldPower = state.get(POWER).intValue();
             this.g = false;
             int blockPower = world.z(pos);
@@ -179,9 +192,7 @@ public class Wire extends BlockRedstoneWire {
             wirePower--;
             int newPower = Math.max(blockPower, wirePower);
             if (oldPower != newPower) {
-                BlockRedstoneEvent event = new BlockRedstoneEvent(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), oldPower, newPower);
-                world.getServer().getPluginManager().callEvent(event);
-
+                this.event.call(world, pos, oldPower, newPower);
                 newPower = event.getNewCurrent();
             }
             if (newPower < oldPower) {
@@ -200,7 +211,7 @@ public class Wire extends BlockRedstoneWire {
             Iterator<BlockPosition> iter = turnOn.iterator();
             final BlockPosition pos = iter.next();
             iter.remove();
-            IBlockData state = world.getType(pos);
+            IBlockData state = provider.getTypeFast(world, pos);
             int oldPower = state.get(POWER).intValue();
             this.g = false;
             int blockPower = world.z(pos);
@@ -210,9 +221,7 @@ public class Wire extends BlockRedstoneWire {
             wirePower--;
             int newPower = Math.max(blockPower, wirePower);
             if (oldPower != newPower) {
-                BlockRedstoneEvent event = new BlockRedstoneEvent(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), oldPower, newPower);
-                world.getServer().getPluginManager().callEvent(event);
-
+                this.event.call(world, pos, oldPower, newPower);
                 newPower = event.getNewCurrent();
             }
             if (newPower > oldPower) {
@@ -287,6 +296,9 @@ public class Wire extends BlockRedstoneWire {
 //            }
 //        }
 //    }
+
+    private Chunk cachedChunk;
+
     private void addBlocksNeedingUpdate(final World worldIn, final BlockPosition pos, RunnableVal<BlockPosition> onEach) {
         for (BaseBlockPosition facing : Wire.surroundingBlocksOffset) {
             BlockPosition offsetPos = add(mpos3, pos, facing);
@@ -307,7 +319,6 @@ public class Wire extends BlockRedstoneWire {
             // piston
             case 29:
             case 33:
-//                return state.get(BlockPiston.FACING) != side.opposite();
             // tnt
             case 44:
             // door
@@ -510,7 +521,7 @@ public class Wire extends BlockRedstoneWire {
         }
         for (final EnumDirection enumdirection : EnumDirection.EnumDirectionLimit.HORIZONTAL) {
             final BlockPosition blockposition2 = blockposition.shift(enumdirection);
-            if (world.getType(blockposition2).l()) {
+            if (provider.getTypeFast(world, blockposition2).l()) {
                 this.b(world, blockposition2.up());
             } else {
                 this.b(world, blockposition2.down());
@@ -530,7 +541,7 @@ public class Wire extends BlockRedstoneWire {
         }
         for (final EnumDirection enumdirection2 : EnumDirection.EnumDirectionLimit.HORIZONTAL) {
             final BlockPosition blockposition2 = blockposition.shift(enumdirection2);
-            if (world.getType(blockposition2).l()) {
+            if (provider.getTypeFast(world, blockposition2).l()) {
                 this.b(world, blockposition2.up());
             } else {
                 this.b(world, blockposition2.down());
@@ -585,6 +596,18 @@ public class Wire extends BlockRedstoneWire {
         set.add(new BlockPosition(0, -1, -1));
         set.add(new BlockPosition(0, 0, 1));
         set.add(new BlockPosition(0, 0, -1));
+        Set<BaseBlockPosition> set2 = new LinkedHashSet<>();
+        for (final EnumDirection facing : Wire.facings) {
+            set.add(ReflectionUtil.<BaseBlockPosition> getOfT((Object) facing, BaseBlockPosition.class));
+        }
+        for (final EnumDirection facing2 : Wire.facings) {
+            final BaseBlockPosition v1 = ReflectionUtil.<BaseBlockPosition> getOfT(facing2, BaseBlockPosition.class);
+            for (final EnumDirection facing3 : Wire.facings) {
+                final BaseBlockPosition v2 = ReflectionUtil.<BaseBlockPosition> getOfT(facing3, BaseBlockPosition.class);
+                set.add(new BlockPosition(v1.getX() + v2.getX(), v1.getY() + v2.getY(), v1.getZ() + v2.getZ()));
+            }
+        }
+        set.remove(BlockPosition.ZERO);
         surroundingBlocksOffset = set.<BaseBlockPosition> toArray(new BaseBlockPosition[set.size()]);
     }
 }

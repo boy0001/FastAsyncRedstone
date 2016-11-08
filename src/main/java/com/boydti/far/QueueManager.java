@@ -2,7 +2,6 @@ package com.boydti.far;
 
 import com.boydti.fawe.example.CharFaweChunk;
 import com.boydti.fawe.example.NMSMappedFaweQueue;
-import com.boydti.fawe.object.IntegerTrio;
 import com.boydti.fawe.util.MathMan;
 import com.boydti.fawe.util.SetQueue;
 import com.boydti.fawe.util.TaskManager;
@@ -49,7 +48,9 @@ public class QueueManager {
                                 char bitMask = entry2.getValue();
                                 CharFaweChunk chunk = (CharFaweChunk) queue.getFaweChunk(cx, cz);
                                 chunk.setBitMask(bitMask);
-                                queue.refreshChunk(chunk);
+                                try {
+                                    queue.refreshChunk(chunk);
+                                } catch (Throwable ignore) {}
                             }
                         }
                         updateBlocks = false;
@@ -64,10 +65,10 @@ public class QueueManager {
         if (size == 0) {
             return;
         }
-        Queue<IntegerTrio> lightPropagationQueue = new ArrayDeque<>();
+        Queue<BlockPos> lightPropagationQueue = new ArrayDeque<>();
         Queue<Object[]> lightRemovalQueue = new ArrayDeque<>();
-        Map<IntegerTrio, Object> visited = new HashMap<>();
-        Map<IntegerTrio, Object> removalVisited = new HashMap<>();
+        Map<BlockPos, Object> visited = new HashMap<>();
+        Map<BlockPos, Object> removalVisited = new HashMap<>();
 
         Iterator<Map.Entry<Long, Map<Short, Object>>> iter = map.entrySet().iterator();
         while (iter.hasNext() && size-- > 0) {
@@ -91,7 +92,7 @@ public class QueueManager {
                 int newLevel = queue.getBrightness(x, y, z);
                 if (oldLevel != newLevel) {
                     queue.setBlockLight(x, y, z, newLevel);
-                    IntegerTrio node = new IntegerTrio(x, y, z);
+                    BlockPos node = new BlockPos(x, y, z);
                     if (newLevel < oldLevel) {
                         removalVisited.put(node, present);
                         lightRemovalQueue.add(new Object[] { node, oldLevel });
@@ -105,7 +106,7 @@ public class QueueManager {
         
         while (!lightRemovalQueue.isEmpty()) {
             Object[] val = lightRemovalQueue.poll();
-            IntegerTrio node = (IntegerTrio) val[0];
+            BlockPos node = (BlockPos) val[0];
             int lightLevel = (int) val[1];
             
             this.computeRemoveBlockLight(queue, node.x - 1, node.y, node.z, lightLevel, lightRemovalQueue, lightPropagationQueue, removalVisited, visited);
@@ -117,7 +118,7 @@ public class QueueManager {
         }
 
         while (!lightPropagationQueue.isEmpty()) {
-            IntegerTrio node = lightPropagationQueue.poll();
+            BlockPos node = lightPropagationQueue.poll();
             int lightLevel = queue.getEmmittedLight(node.x, node.y, node.z);
             if (lightLevel > 1) {
                 this.computeSpreadBlockLight(queue, node.x - 1, node.y, node.z, lightLevel, lightPropagationQueue, visited);
@@ -129,16 +130,42 @@ public class QueueManager {
             }
         }
     }
+
+    private Chunk cachedChunk;
+    private ChunkSection cachedSection;
+    private IBlockData air = Block.getByCombinedId(0);
+
+    public final IBlockData getTypeFast(World world, BlockPosition pos) {
+        return getTypeFast(world, pos.getX(), pos.getY(), pos.getZ());
+    }
+
+    public final IBlockData getTypeFast(World world, int x, int y, int z) {
+        int x4 = x >> 4;
+        int z4 = z >> 4;
+        if (cachedChunk == null || cachedChunk.locX != x4 || cachedChunk.locZ != z4) {
+            cachedChunk = world.getChunkAt(x4, z4);
+            cachedSection = cachedChunk.getSections()[y >> 4];
+        } else {
+            int y4 = y >> 4;
+            if (cachedSection == null || cachedSection.getYPosition() != y4 << 4) {
+                cachedSection = cachedChunk.getSections()[y4];
+            }
+        }
+        if (cachedSection == Chunk.a) {
+            return air;
+        }
+        return cachedSection.getType(x & 15, y & 15, z & 15);
+    }
     
-    private void computeRemoveBlockLight(NMSMappedFaweQueue world, int x, int y, int z, int currentLight, Queue<Object[]> queue, Queue<IntegerTrio> spreadQueue, Map<IntegerTrio, Object> visited,
-    Map<IntegerTrio, Object> spreadVisited) {
+    private void computeRemoveBlockLight(NMSMappedFaweQueue world, int x, int y, int z, int currentLight, Queue<Object[]> queue, Queue<BlockPos> spreadQueue, Map<BlockPos, Object> visited,
+    Map<BlockPos, Object> spreadVisited) {
         int current = world.getEmmittedLight(x, y, z);
         if (current != 0 && current < currentLight) {
             world.setBlockLight(x, y, z, 0);
             if (current > 1) {
                 mutableBlockPos.set(x, y, z);
                 if (!visited.containsKey(mutableBlockPos)) {
-                    IntegerTrio index = new IntegerTrio(x, y, z);
+                    BlockPos index = new BlockPos(x, y, z);
                     visited.put(index, present);
                     queue.add(new Object[] { index, current });
                 }
@@ -146,14 +173,14 @@ public class QueueManager {
         } else if (current >= currentLight) {
             mutableBlockPos.set(x, y, z);
             if (!spreadVisited.containsKey(mutableBlockPos)) {
-                IntegerTrio index = new IntegerTrio(x, y, z);
+                BlockPos index = new BlockPos(x, y, z);
                 spreadVisited.put(index, present);
                 spreadQueue.add(index);
             }
         }
     }
     
-    private void computeSpreadBlockLight(NMSMappedFaweQueue world, int x, int y, int z, int currentLight, Queue<IntegerTrio> queue, Map<IntegerTrio, Object> visited) {
+    private void computeSpreadBlockLight(NMSMappedFaweQueue world, int x, int y, int z, int currentLight, Queue<BlockPos> queue, Map<BlockPos, Object> visited) {
         
         currentLight = currentLight - Math.max(1, world.getOpacity(x, y, z));
         if (currentLight > 0) {
@@ -162,9 +189,9 @@ public class QueueManager {
                 world.setBlockLight(x, y, z, currentLight);
                 mutableBlockPos.set(x, y, z);
                 if (!visited.containsKey(mutableBlockPos)) {
-                    visited.put(new IntegerTrio(x, y, z), present);
+                    visited.put(new BlockPos(x, y, z), present);
                     if (currentLight > 1) {
-                        queue.add(new IntegerTrio(x, y, z));
+                        queue.add(new BlockPos(x, y, z));
                     }
                 }
             }
