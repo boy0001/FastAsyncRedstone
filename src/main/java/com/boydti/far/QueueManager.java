@@ -111,8 +111,12 @@ public class QueueManager {
             
             this.computeRemoveBlockLight(queue, node.x - 1, node.y, node.z, lightLevel, lightRemovalQueue, lightPropagationQueue, removalVisited, visited);
             this.computeRemoveBlockLight(queue, node.x + 1, node.y, node.z, lightLevel, lightRemovalQueue, lightPropagationQueue, removalVisited, visited);
-            this.computeRemoveBlockLight(queue, node.x, node.y - 1, node.z, lightLevel, lightRemovalQueue, lightPropagationQueue, removalVisited, visited);
-            this.computeRemoveBlockLight(queue, node.x, node.y + 1, node.z, lightLevel, lightRemovalQueue, lightPropagationQueue, removalVisited, visited);
+            if (node.y > 0) {
+                this.computeRemoveBlockLight(queue, node.x, node.y - 1, node.z, lightLevel, lightRemovalQueue, lightPropagationQueue, removalVisited, visited);
+            }
+            if (node.y < 255) {
+                this.computeRemoveBlockLight(queue, node.x, node.y + 1, node.z, lightLevel, lightRemovalQueue, lightPropagationQueue, removalVisited, visited);
+            }
             this.computeRemoveBlockLight(queue, node.x, node.y, node.z - 1, lightLevel, lightRemovalQueue, lightPropagationQueue, removalVisited, visited);
             this.computeRemoveBlockLight(queue, node.x, node.y, node.z + 1, lightLevel, lightRemovalQueue, lightPropagationQueue, removalVisited, visited);
         }
@@ -123,8 +127,12 @@ public class QueueManager {
             if (lightLevel > 1) {
                 this.computeSpreadBlockLight(queue, node.x - 1, node.y, node.z, lightLevel, lightPropagationQueue, visited);
                 this.computeSpreadBlockLight(queue, node.x + 1, node.y, node.z, lightLevel, lightPropagationQueue, visited);
-                this.computeSpreadBlockLight(queue, node.x, node.y - 1, node.z, lightLevel, lightPropagationQueue, visited);
-                this.computeSpreadBlockLight(queue, node.x, node.y + 1, node.z, lightLevel, lightPropagationQueue, visited);
+                if (node.y > 0) {
+                    this.computeSpreadBlockLight(queue, node.x, node.y - 1, node.z, lightLevel, lightPropagationQueue, visited);
+                }
+                if (node.y < 255) {
+                    this.computeSpreadBlockLight(queue, node.x, node.y + 1, node.z, lightLevel, lightPropagationQueue, visited);
+                }
                 this.computeSpreadBlockLight(queue, node.x, node.y, node.z - 1, lightLevel, lightPropagationQueue, visited);
                 this.computeSpreadBlockLight(queue, node.x, node.y, node.z + 1, lightLevel, lightPropagationQueue, visited);
             }
@@ -181,7 +189,6 @@ public class QueueManager {
     }
     
     private void computeSpreadBlockLight(NMSMappedFaweQueue world, int x, int y, int z, int currentLight, Queue<BlockPos> queue, Map<BlockPos, Object> visited) {
-        
         currentLight = currentLight - Math.max(1, world.getOpacity(x, y, z));
         if (currentLight > 0) {
             int current = world.getEmmittedLight(x, y, z);
