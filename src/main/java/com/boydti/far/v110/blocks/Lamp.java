@@ -1,9 +1,8 @@
-package com.boydti.far.blocks;
+package com.boydti.far.v110.blocks;
 
+import com.boydti.far.v110.QueueManager110;
 import java.util.Random;
-
 import javax.annotation.Nullable;
-
 import net.minecraft.server.v1_10_R1.Block;
 import net.minecraft.server.v1_10_R1.BlockPosition;
 import net.minecraft.server.v1_10_R1.BlockRedstoneLamp;
@@ -12,17 +11,14 @@ import net.minecraft.server.v1_10_R1.IBlockData;
 import net.minecraft.server.v1_10_R1.Item;
 import net.minecraft.server.v1_10_R1.ItemStack;
 import net.minecraft.server.v1_10_R1.World;
-
 import org.bukkit.craftbukkit.v1_10_R1.event.CraftEventFactory;
-
-import com.boydti.far.QueueManager;
 
 public class Lamp extends BlockRedstoneLamp {
     
     private final boolean a;
-    private final QueueManager provider;
+    private final QueueManager110 provider;
     
-    public Lamp(boolean flag, QueueManager provider) {
+    public Lamp(boolean flag, QueueManager110 provider) {
         super(flag);
         this.a = flag;
         this.provider = provider;
@@ -31,12 +27,12 @@ public class Lamp extends BlockRedstoneLamp {
     @Override
     public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
         if ((this.a) && (!world.isBlockIndirectlyPowered(blockposition))) {
-            provider.update(world, blockposition, Blocks.REDSTONE_LAMP.getBlockData(), Lamp.this, true, 2);
+            provider.updateBlockFast(world, blockposition, Blocks.REDSTONE_LAMP.getBlockData(), Lamp.this, true, 2);
         } else if ((!this.a) && (world.isBlockIndirectlyPowered(blockposition))) {
             if (CraftEventFactory.callRedstoneChange(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), 0, 15).getNewCurrent() != 15) {
                 return;
             }
-            provider.update(world, blockposition, Blocks.LIT_REDSTONE_LAMP.getBlockData(), Lamp.this, true, 2);
+            provider.updateBlockFast(world, blockposition, Blocks.LIT_REDSTONE_LAMP.getBlockData(), Lamp.this, true, 2);
         }
     }
     
@@ -48,7 +44,7 @@ public class Lamp extends BlockRedstoneLamp {
             if (CraftEventFactory.callRedstoneChange(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), 0, 15).getNewCurrent() != 15) {
                 return;
             }
-            provider.update(world, blockposition, Blocks.LIT_REDSTONE_LAMP.getBlockData(), Lamp.this, true, 2);
+            provider.updateBlockFast(world, blockposition, Blocks.LIT_REDSTONE_LAMP.getBlockData(), Lamp.this, true, 2);
         }
     }
     
@@ -58,7 +54,7 @@ public class Lamp extends BlockRedstoneLamp {
             if (CraftEventFactory.callRedstoneChange(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), 15, 0).getNewCurrent() != 0) {
                 return;
             }
-            provider.update(world, blockposition, Blocks.REDSTONE_LAMP.getBlockData(), Lamp.this, true, 2);
+            provider.updateBlockFast(world, blockposition, Blocks.REDSTONE_LAMP.getBlockData(), Lamp.this, true, 2);
         }
     }
     

@@ -5,10 +5,14 @@ import com.boydti.fawe.example.NMSMappedFaweQueue;
 import com.boydti.fawe.util.MathMan;
 import com.boydti.fawe.util.SetQueue;
 import com.boydti.fawe.util.TaskManager;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import net.minecraft.server.v1_10_R1.*;
+import org.bukkit.World;
 
 public class QueueManager {
     private HashMap<World, Map<Long, Character>> blockQueueWorlds = new HashMap<>();
@@ -16,7 +20,6 @@ public class QueueManager {
 
     private volatile boolean updateBlocks;
     public final BlockPos mutableBlockPos = new BlockPos();
-    public final BlockPosition mutable = new BlockPosition.MutableBlockPosition();
     public final Object present = new Object();
 
     public QueueManager() {
@@ -36,11 +39,12 @@ public class QueueManager {
                     public void run() {
                         for (Entry<World, Map<Long, Character>> entry : sendBlocks.entrySet()) {
                             World world = entry.getKey();
-                            NMSMappedFaweQueue queue = (NMSMappedFaweQueue) SetQueue.IMP.getNewQueue(world.getWorld().getName(), true, false);
+                            NMSMappedFaweQueue queue = (NMSMappedFaweQueue) SetQueue.IMP.getNewQueue(world.getName(), true, false);
                             Map<Long, Map<Short, Object>> updateLightQueue = updateLight.get(world);
                             if (updateLightQueue != null) {
                                 updateBlockLight(queue, updateLightQueue);
                             }
+                            queue.startSet(true);
                             for (Entry<Long, Character> entry2 : entry.getValue().entrySet()) {
                                 Long pair = entry2.getKey();
                                 int cx = MathMan.unpairIntX(pair);
@@ -52,6 +56,7 @@ public class QueueManager {
                                     queue.refreshChunk(chunk);
                                 } catch (Throwable ignore) {}
                             }
+                            queue.startSet(false);
                         }
                         updateBlocks = false;
                     }
@@ -139,32 +144,6 @@ public class QueueManager {
         }
     }
 
-    private Chunk cachedChunk;
-    private ChunkSection cachedSection;
-    private IBlockData air = Block.getByCombinedId(0);
-
-    public final IBlockData getTypeFast(World world, BlockPosition pos) {
-        return getTypeFast(world, pos.getX(), pos.getY(), pos.getZ());
-    }
-
-    public final IBlockData getTypeFast(World world, int x, int y, int z) {
-        int x4 = x >> 4;
-        int z4 = z >> 4;
-        if (cachedChunk == null || cachedChunk.locX != x4 || cachedChunk.locZ != z4) {
-            cachedChunk = world.getChunkAt(x4, z4);
-            cachedSection = cachedChunk.getSections()[y >> 4];
-        } else {
-            int y4 = y >> 4;
-            if (cachedSection == null || cachedSection.getYPosition() != y4 << 4) {
-                cachedSection = cachedChunk.getSections()[y4];
-            }
-        }
-        if (cachedSection == Chunk.a) {
-            return air;
-        }
-        return cachedSection.getType(x & 15, y & 15, z & 15);
-    }
-    
     private void computeRemoveBlockLight(NMSMappedFaweQueue world, int x, int y, int z, int currentLight, Queue<Object[]> queue, Queue<BlockPos> spreadQueue, Map<BlockPos, Object> visited,
     Map<BlockPos, Object> spreadVisited) {
         int current = world.getEmmittedLight(x, y, z);
@@ -242,19 +221,13 @@ public class QueueManager {
         map.put(pair, value);
     }
 
-    public void update(World world, BlockPosition pos, IBlockData state, Block block, boolean light, int physics) {
-        Map<Long, Character> map = getMap(blockQueueWorlds, world);
-        int x = pos.getX();
-        int z = pos.getZ();
-        int y = pos.getY();
+    public void queueUpdate(World bukkitWorld, int x, int y, int z, int distance) {
+        Map<Long, Character> map = getMap(blockQueueWorlds, bukkitWorld);
         int cx = x >> 4;
         int cz = z >> 4;
         int cy = y >> 4;
         sendChunk(map, cx, cy, cz);
-        Chunk chunk = world.getChunkAtWorldCoords(pos);
-        IBlockData previous = chunk.a(pos, state);
-        if (light) {
-            int distance = Math.max(state.d(), previous == null ? 0 : previous.d());
+        if (distance != 0) {
             for (int cxx = (x - distance) >> 4; cxx <= (x + distance) >> 4; cxx++) {
                 for (int czz = (z - distance) >> 4; czz <= (z + distance) >> 4; czz++) {
                     for (int cyy = Math.max(0, (y - distance) >> 4); cyy <= (y + distance) >> 4 && cyy < 16; cyy++) {
@@ -262,16 +235,7 @@ public class QueueManager {
                     }
                 }
             }
-            addLightUpdate(world, x, y, z);
-        }
-        if (previous != null && physics != 0) {
-            for (int yy = Math.max(0, y - 1); yy <= y + 1 && yy < 256; yy++) {
-                for (int xx = x - 1; xx <= x + 1; xx++) {
-                    for (int zz = z - 1; zz <= z + 1; zz++) {
-                        world.e(mutable.a(xx, yy, zz), block);
-                    }
-                }
-            }
+            addLightUpdate(bukkitWorld, x, y, z);
         }
     }
 }

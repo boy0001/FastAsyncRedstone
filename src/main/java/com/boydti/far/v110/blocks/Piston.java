@@ -1,50 +1,19 @@
-package com.boydti.far.blocks;
+package com.boydti.far.v110.blocks;
 
+import com.boydti.far.v110.QueueManager110;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
 import javax.annotation.Nullable;
-
-import net.minecraft.server.v1_10_R1.AxisAlignedBB;
-import net.minecraft.server.v1_10_R1.Block;
-import net.minecraft.server.v1_10_R1.BlockPiston;
-import net.minecraft.server.v1_10_R1.BlockPistonExtension;
+import net.minecraft.server.v1_10_R1.*;
 import net.minecraft.server.v1_10_R1.BlockPistonExtension.EnumPistonType;
-import net.minecraft.server.v1_10_R1.BlockPistonMoving;
-import net.minecraft.server.v1_10_R1.BlockPosition;
-import net.minecraft.server.v1_10_R1.BlockStateBoolean;
-import net.minecraft.server.v1_10_R1.BlockStateList;
-import net.minecraft.server.v1_10_R1.Blocks;
-import net.minecraft.server.v1_10_R1.CreativeModeTab;
-import net.minecraft.server.v1_10_R1.Entity;
-import net.minecraft.server.v1_10_R1.EntityLiving;
-import net.minecraft.server.v1_10_R1.EnumBlockMirror;
-import net.minecraft.server.v1_10_R1.EnumBlockRotation;
-import net.minecraft.server.v1_10_R1.EnumDirection;
-import net.minecraft.server.v1_10_R1.EnumPistonReaction;
-import net.minecraft.server.v1_10_R1.IBlockAccess;
-import net.minecraft.server.v1_10_R1.IBlockData;
-import net.minecraft.server.v1_10_R1.IBlockState;
-import net.minecraft.server.v1_10_R1.ItemStack;
-import net.minecraft.server.v1_10_R1.MathHelper;
-import net.minecraft.server.v1_10_R1.PistonExtendsChecker;
-import net.minecraft.server.v1_10_R1.SoundCategory;
-import net.minecraft.server.v1_10_R1.SoundEffectType;
-import net.minecraft.server.v1_10_R1.SoundEffects;
-import net.minecraft.server.v1_10_R1.TileEntity;
-import net.minecraft.server.v1_10_R1.TileEntityPiston;
-import net.minecraft.server.v1_10_R1.World;
-
 import org.bukkit.craftbukkit.v1_10_R1.block.CraftBlock;
 import org.bukkit.event.block.BlockPistonEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
-
-import com.boydti.far.QueueManager;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
 public class Piston extends BlockPiston {
     
@@ -55,10 +24,10 @@ public class Piston extends BlockPiston {
     protected static final AxisAlignedBB e = new AxisAlignedBB(0.0D, 0.0D, 0.25D, 1.0D, 1.0D, 1.0D);
     protected static final AxisAlignedBB f = new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 0.75D, 1.0D);
     protected static final AxisAlignedBB g = new AxisAlignedBB(0.0D, 0.25D, 0.0D, 1.0D, 1.0D, 1.0D);
-    private final QueueManager provider;
+    private final QueueManager110 provider;
     private final boolean sticky;
     
-    public Piston(boolean flag, QueueManager provider) {
+    public Piston(boolean flag, QueueManager110 provider) {
         super(flag);
         w(this.blockStateList.getBlockData().set(FACING, EnumDirection.NORTH).set(EXTENDED, Boolean.valueOf(false)));
         a(SoundEffectType.d);
@@ -70,7 +39,7 @@ public class Piston extends BlockPiston {
     
     @Override
     public void postPlace(World world, BlockPosition blockposition, IBlockData iblockdata, EntityLiving entityliving, ItemStack itemstack) {
-        provider.update(world, blockposition, iblockdata.set(FACING, a(blockposition, entityliving)), Piston.this, true, 2);
+        provider.updateBlockFast(world, blockposition, iblockdata.set(FACING, a(blockposition, entityliving)), Piston.this, true, 2);
         e(world, blockposition, iblockdata);
     }
     
@@ -99,7 +68,7 @@ public class Piston extends BlockPiston {
         EnumDirection enumdirection = iblockdata.get(FACING);
         boolean flag = a(world, blockposition, enumdirection);
         if ((flag) && (i == 1)) {
-            provider.update(world, blockposition, iblockdata.set(EXTENDED, Boolean.valueOf(true)), Piston.this, true, 2);
+            provider.updateBlockFast(world, blockposition, iblockdata.set(EXTENDED, Boolean.valueOf(true)), Piston.this, true, 2);
             return false;
         }
         if ((!flag) && (i == 0)) {
@@ -109,7 +78,7 @@ public class Piston extends BlockPiston {
             if (!a(world, blockposition, enumdirection, true)) {
                 return false;
             }
-            provider.update(world, blockposition, iblockdata.set(EXTENDED, Boolean.valueOf(true)), Piston.this, true, 2);
+            provider.updateBlockFast(world, blockposition, iblockdata.set(EXTENDED, Boolean.valueOf(true)), Piston.this, true, 2);
             world.a(null, blockposition, SoundEffects.eb, SoundCategory.BLOCKS, 0.5F, world.random.nextFloat() * 0.25F + 0.6F);
         } else if (i == 1) {
             TileEntity tileentity = world.getTileEntity(blockposition.shift(enumdirection));
@@ -117,13 +86,13 @@ public class Piston extends BlockPiston {
                 ((TileEntityPiston) tileentity).i();
             }
             
-            //            provider.update(
+            //            provider.updateBlockFast(
             //            world,
             //            blockposition,
             //            Blocks.PISTON_EXTENSION.getBlockData().set(BlockPistonMoving.FACING, enumdirection)
             //            .set(BlockPistonMoving.TYPE, this.sticky ? BlockPistonExtension.EnumPistonType.STICKY : BlockPistonExtension.EnumPistonType.DEFAULT), true, 3);
             
-            provider.update(
+            provider.updateBlockFast(
             world,
             blockposition,
             Blocks.PISTON_EXTENSION.getBlockData().set(BlockPistonMoving.FACING, enumdirection)
@@ -150,7 +119,7 @@ public class Piston extends BlockPiston {
                     a(world, blockposition, enumdirection, false);
                 }
             } else {
-                provider.update(world, blockposition.shift(enumdirection), Blocks.AIR.getBlockData(), Piston.this, true, 3);
+                provider.updateBlockFast(world, blockposition.shift(enumdirection), Blocks.AIR.getBlockData(), Piston.this, true, 3);
             }
             world.a(null, blockposition, SoundEffects.ea, SoundCategory.BLOCKS, 0.5F, world.random.nextFloat() * 0.15F + 0.6F);
         }
@@ -159,7 +128,7 @@ public class Piston extends BlockPiston {
     
     private boolean a(World world, BlockPosition blockposition, EnumDirection enumdirection, boolean flag) {
         if (!flag) {
-            provider.update(world, blockposition.shift(enumdirection), Blocks.AIR.getBlockData(), Piston.this, true, 3);
+            provider.updateBlockFast(world, blockposition.shift(enumdirection), Blocks.AIR.getBlockData(), Piston.this, true, 3);
         }
 
         PistonExtendsChecker pistonextendschecker = new PistonExtendsChecker(world, blockposition, enumdirection, flag);
@@ -229,7 +198,7 @@ public class Piston extends BlockPiston {
                     blockposition2 = (BlockPosition) var23.get(k);
                     iblockdata = world.getType(blockposition2);
                     iblockdata.getBlock().b(world, blockposition2, iblockdata, 0);
-                    provider.update(world, blockposition2, Blocks.AIR.getBlockData(), Piston.this, true, 3);
+                    provider.updateBlockFast(world, blockposition2, Blocks.AIR.getBlockData(), Piston.this, true, 3);
                     --var24;
                     aiblockdata[var24] = iblockdata;
                 }
@@ -237,9 +206,9 @@ public class Piston extends BlockPiston {
                 for (k = list.size() - 1; k >= 0; --k) {
                     blockposition2 = list.get(k);
                     iblockdata = world.getType(blockposition2);
-                    provider.update(world, blockposition2, Blocks.AIR.getBlockData(), Piston.this, true, 2);
+                    provider.updateBlockFast(world, blockposition2, Blocks.AIR.getBlockData(), Piston.this, true, 2);
                     blockposition2 = blockposition2.shift(enumdirection1);
-                    provider.update(world, blockposition2, Blocks.PISTON_EXTENSION.getBlockData().set(FACING, enumdirection), Piston.this, true, 4);
+                    provider.updateBlockFast(world, blockposition2, Blocks.PISTON_EXTENSION.getBlockData().set(FACING, enumdirection), Piston.this, true, 4);
                     world.setTileEntity(blockposition2, BlockPistonMoving.a(arraylist.get(k), enumdirection, flag, false));
                     --var24;
                     aiblockdata[var24] = iblockdata;
@@ -251,7 +220,7 @@ public class Piston extends BlockPiston {
                     iblockdata = Blocks.PISTON_HEAD.getBlockData().set(BlockPistonExtension.FACING, enumdirection).set(BlockPistonExtension.TYPE, l);
                     IBlockData iblockdata1 = Blocks.PISTON_EXTENSION.getBlockData().set(BlockPistonMoving.FACING, enumdirection)
                     .set(BlockPistonMoving.TYPE, this.sticky ? EnumPistonType.STICKY : EnumPistonType.DEFAULT);
-                    provider.update(world, blockposition3, iblockdata1, Piston.this, true, 4);
+                    provider.updateBlockFast(world, blockposition3, iblockdata1, Piston.this, true, 4);
                     world.setTileEntity(blockposition3, BlockPistonMoving.a(iblockdata, enumdirection, true, false));
                 }
                 

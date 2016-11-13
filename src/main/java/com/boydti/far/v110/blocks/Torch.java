@@ -1,12 +1,12 @@
-package com.boydti.far.blocks;
+package com.boydti.far.v110.blocks;
 
+import com.boydti.far.v110.QueueManager110;
+import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.WeakHashMap;
-
 import javax.annotation.Nullable;
-
 import net.minecraft.server.v1_10_R1.Block;
 import net.minecraft.server.v1_10_R1.BlockPosition;
 import net.minecraft.server.v1_10_R1.BlockRedstoneTorch;
@@ -21,17 +21,13 @@ import net.minecraft.server.v1_10_R1.ItemStack;
 import net.minecraft.server.v1_10_R1.SoundCategory;
 import net.minecraft.server.v1_10_R1.SoundEffects;
 import net.minecraft.server.v1_10_R1.World;
-
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.plugin.PluginManager;
-
-import com.boydti.far.QueueManager;
-import com.google.common.collect.Lists;
 
 public class Torch extends BlockRedstoneTorch {
     private static final Map<World, List<RedstoneUpdateInfo>> g = new WeakHashMap();
     private final boolean isOn;
-    private final QueueManager provider;
+    private final QueueManager110 provider;
     
     private boolean a(World world, BlockPosition blockposition, boolean flag) {
         if (!g.containsKey(world)) {
@@ -54,7 +50,7 @@ public class Torch extends BlockRedstoneTorch {
         return false;
     }
     
-    public Torch(QueueManager provider, boolean flag) {
+    public Torch(QueueManager110 provider, boolean flag) {
         super(flag);
         this.isOn = flag;
         this.provider = provider;
@@ -97,7 +93,7 @@ public class Torch extends BlockRedstoneTorch {
     public int b(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition, EnumDirection enumdirection) {
         return (this.isOn) && (iblockdata.get(FACING) != enumdirection) ? 15 : 0;
     }
-    
+
     private boolean g(World world, BlockPosition blockposition, IBlockData iblockdata) {
         EnumDirection enumdirection = iblockdata.get(FACING).opposite();
         
@@ -128,16 +124,18 @@ public class Torch extends BlockRedstoneTorch {
                         return;
                     }
                 }
-                provider.update(world, blockposition, Blocks.UNLIT_REDSTONE_TORCH.getBlockData().set(FACING, iblockdata.get(FACING)), Torch.this, true, 3);
+
+                provider.updateBlockFast(world, blockposition, Blocks.UNLIT_REDSTONE_TORCH.getBlockData().set(FACING, iblockdata.get(FACING)), Torch.this, true, 3);
                 if (a(world, blockposition, true)) {
                     world.a(null, blockposition, SoundEffects.eR, SoundCategory.BLOCKS, 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
+
                     for (int i = 0; i < 5; i++) {
                         double d0 = blockposition.getX() + random.nextDouble() * 0.6D + 0.2D;
                         double d1 = blockposition.getY() + random.nextDouble() * 0.6D + 0.2D;
                         double d2 = blockposition.getZ() + random.nextDouble() * 0.6D + 0.2D;
-                        
                         world.addParticle(EnumParticle.SMOKE_NORMAL, d0, d1, d2, 0.0D, 0.0D, 0.0D, new int[0]);
                     }
+
                     world.a(blockposition, world.getType(blockposition).getBlock(), 160);
                 }
             }
@@ -149,7 +147,7 @@ public class Torch extends BlockRedstoneTorch {
                     return;
                 }
             }
-            provider.update(world, blockposition, Blocks.REDSTONE_TORCH.getBlockData().set(FACING, iblockdata.get(FACING)), Torch.this, true, 3);
+            provider.updateBlockFast(world, blockposition, Blocks.REDSTONE_TORCH.getBlockData().set(FACING, iblockdata.get(FACING)), Torch.this, true, 3);
         }
     }
     

@@ -1,15 +1,25 @@
-package com.boydti.far.blocks;
+package com.boydti.far.v110.blocks;
 
 import com.boydti.far.FarMain;
 import com.boydti.far.MutableBlockRedstoneEvent;
-import com.boydti.far.QueueManager;
 import com.boydti.far.ReflectionUtil;
+import com.boydti.far.v110.QueueManager110;
 import com.boydti.fawe.object.RunnableVal;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import net.minecraft.server.v1_10_R1.*;
+import net.minecraft.server.v1_10_R1.BaseBlockPosition;
+import net.minecraft.server.v1_10_R1.Block;
+import net.minecraft.server.v1_10_R1.BlockPosition;
 import net.minecraft.server.v1_10_R1.BlockPosition.MutableBlockPosition;
+import net.minecraft.server.v1_10_R1.BlockRedstoneWire;
+import net.minecraft.server.v1_10_R1.Chunk;
+import net.minecraft.server.v1_10_R1.EnumDirection;
+import net.minecraft.server.v1_10_R1.IBlockAccess;
+import net.minecraft.server.v1_10_R1.IBlockData;
+import net.minecraft.server.v1_10_R1.IBlockState;
+import net.minecraft.server.v1_10_R1.SoundEffectType;
+import net.minecraft.server.v1_10_R1.World;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bukkit.Bukkit;
 
@@ -22,10 +32,10 @@ public class Wire extends BlockRedstoneWire {
     private static final EnumDirection[] facings;
     private static final BaseBlockPosition[] surroundingBlocksOffset;
     private boolean g;
-    private final QueueManager provider;
+    private final QueueManager110 provider;
     private final MutableBlockRedstoneEvent event;
 
-    public Wire(QueueManager provider) throws NoSuchFieldException {
+    public Wire(QueueManager110 provider) throws NoSuchFieldException {
         this.provider = provider;
         this.turnOff = new LinkedHashSet<>();
         this.turnOn = new LinkedHashSet<>();
@@ -44,54 +54,6 @@ public class Wire extends BlockRedstoneWire {
         });
     }
 
-    private EnumDirection getDirection(int dx, int dy, int dz) {
-        switch (dx) {
-            case -1:
-                return EnumDirection.WEST;
-            case 1:
-                return EnumDirection.EAST;
-        }
-        switch (dz) {
-            case -1:
-                return EnumDirection.NORTH;
-            case 1:
-                return EnumDirection.SOUTH;
-        }
-        switch (dy) {
-            case -1:
-                return EnumDirection.DOWN;
-            case 1:
-                return EnumDirection.UP;
-        }
-        return null;
-    }
-    
-    private EnumDirection getDirection(BlockPosition pos1, BlockPosition pos2) {
-        int dx = pos2.getX() - pos1.getX();
-        switch (dx) {
-            case -1:
-                return EnumDirection.WEST;
-            case 1:
-                return EnumDirection.EAST;
-        }
-        int dz = pos2.getZ() - pos1.getZ();
-        switch (dz) {
-            case -1:
-                return EnumDirection.NORTH;
-            case 1:
-                return EnumDirection.SOUTH;
-        }
-        int dy = pos2.getY() - pos1.getY();
-        switch (dy) {
-            case -1:
-                return EnumDirection.DOWN;
-            case 1:
-                return EnumDirection.UP;
-        }
-        
-        return null;
-    }
-    
     private BlockPosition getImmutable(BlockPosition pos) {
         if (pos instanceof MutableBlockPosition) {
             return new BlockPosition(pos.getX(), pos.getY(), pos.getZ());
@@ -138,32 +100,6 @@ public class Wire extends BlockRedstoneWire {
         world.e(pos, this);
     }
     
-//    private void handleUpdate(World world, BlockPosition blockposition, IBlockData iblockdata) {
-//        calculateCurrentChanges(world, blockposition, new RunnableVal<BlockPosition>() {
-//            @Override
-//            public void run(BlockPosition arg0) {
-//                updatedRedstoneWire.add(arg0);
-//            }
-//        });
-//
-//        Set<BlockPosition> blocksNeedingUpdate = Sets.newLinkedHashSet();
-//        for (Iterator localIterator = this.updatedRedstoneWire.iterator(); localIterator.hasNext();) {
-//            BlockPosition posi = (BlockPosition) localIterator.next();
-//            addBlocksNeedingUpdateOld(world, posi, blocksNeedingUpdate);
-//        }
-//        BlockPosition posi;
-//        Object it = Lists.newLinkedList(this.updatedRedstoneWire).descendingIterator();
-//        while (((Iterator) it).hasNext()) {
-//            addAllSurroundingBlocksOld((BlockPosition) ((Iterator) it).next(), blocksNeedingUpdate);
-//        }
-//        blocksNeedingUpdate.removeAll(this.updatedRedstoneWire);
-//
-//        this.updatedRedstoneWire.clear();
-//        for (BlockPosition pos2 : blocksNeedingUpdate) {
-//            world.e(pos2, this);
-//        }
-//    }
-
     private BlockPosition add(MutableBlockPosition pos, BaseBlockPosition pos1, BaseBlockPosition pos2) {
         return pos.c(pos1.getX() + pos2.getX(), pos1.getY() + pos2.getY(), pos1.getZ() + pos2.getZ());
     }
@@ -192,7 +128,7 @@ public class Wire extends BlockRedstoneWire {
             wirePower--;
             int newPower = Math.max(blockPower, wirePower);
             if (oldPower != newPower) {
-                this.event.call(world, pos, oldPower, newPower);
+                this.event.call(world.getWorld(), pos.getX(), pos.getY(), pos.getZ(), oldPower, newPower);
                 newPower = event.getNewCurrent();
             }
             if (newPower < oldPower) {
@@ -221,7 +157,7 @@ public class Wire extends BlockRedstoneWire {
             wirePower--;
             int newPower = Math.max(blockPower, wirePower);
             if (oldPower != newPower) {
-                this.event.call(world, pos, oldPower, newPower);
+                this.event.call(world.getWorld(), pos.getX(), pos.getY(), pos.getZ(), oldPower, newPower);
                 newPower = event.getNewCurrent();
             }
             if (newPower > oldPower) {
@@ -284,18 +220,6 @@ public class Wire extends BlockRedstoneWire {
         }
         return wirePower;
     }
-
-//    private void addBlocksNeedingUpdate(final World worldIn, final BlockPosition pos, RunnableVal<BlockPosition> onEach) {
-//        for (final EnumDirection facing : Wire.facings) {
-//            final BlockPosition offsetPos = pos.shift(facing);
-//            boolean shouldPower = facing == EnumDirection.DOWN || shouldPower(worldIn, pos, facing.opposite());
-//            if (shouldPower) {
-//                if ((facing.k().c() && this.canBlockBePoweredFromSide(worldIn.getType(offsetPos), facing, true))) {
-//                    onEach.run(offsetPos);
-//                }
-//            }
-//        }
-//    }
 
     private Chunk cachedChunk;
 
@@ -363,86 +287,9 @@ public class Wire extends BlockRedstoneWire {
         }
     }
 
-    private boolean canBlockBePoweredFromSide(IBlockData state, EnumDirection side, boolean isWire) {
-        Block block = state.getBlock();
-        switch (Block.getId(block)) {
-            case 23: // dispensor
-            case 158: // dropper
-                return true;
-                // note block
-            case 25:
-                return true;
-                // piston
-            case 29:
-            case 33:
-                return true;
-//                return state.get(BlockPiston.FACING) != side.opposite();
-                // tnt
-            case 44:
-                return true;
-                // door
-            case 96: // trapdoor
-            case 167:
-            case 107: // fence
-            case 183:
-            case 184:
-            case 185:
-            case 186:
-            case 187:
-            case 64: // door
-            case 71:
-            case 193:
-            case 194:
-            case 195:
-            case 196:
-            case 197:
-                return true;
-                // diode
-            case 93:
-            case 94:
-//                if (state.get(BlockDiodeAbstract.FACING) != side.opposite()) {
-//                    return true;
-//                }
-                return true;
-                // torch
-            case 75:
-            case 76:
-//                if (!isWire && state.get(BlockRedstoneTorch.FACING) == side) {
-//                    return true;
-//                }
-//                break;
-                return true;
-                // comparator
-            case 149:
-            case 150:
-//                if (state.get(BlockDiodeAbstract.FACING) != side.opposite() && isWire && (state.get(BlockRedstoneComparator.FACING).k() != side.k()) && (side.k().c())) {
-//                    return true;
-//                }
-//                break;
-                return true;
-                // lamp
-            case 123:
-            case 124:
-                return true;
-                // rail
-            case 27:
-                return true;
-                // BUD
-            case 73: // ore
-            case 74:
-            case 8: // water
-            case 9:
-            case 34: // piston
-                return true;
-            default:
-                return false;
-        }
-//        return false;
-    }
-    
     private IBlockData setWireState(final World worldIn, final BlockPosition pos, IBlockData state, final int power) {
         state = state.set((IBlockState) Wire.POWER, (Comparable) power);
-        provider.update(worldIn, pos, state, Wire.this, false, 0);
+        provider.updateBlockFast(worldIn, pos, state, Wire.this, false, 0);
         return state;
     }
 
