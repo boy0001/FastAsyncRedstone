@@ -11,7 +11,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class FarMain extends JavaPlugin {
     
-    private static QueueManager provider;
+    private QueueManager provider;
     private static FarMain instance;
 
     public static FarMain get() {
@@ -20,9 +20,6 @@ public class FarMain extends JavaPlugin {
 
     public FarMain() {
         instance = this;
-    }
-
-    static {
         System.out.println("[FastAsyncRedstone] Injecting custom classes");
         setupConfig();
         try {
@@ -34,11 +31,6 @@ public class FarMain extends JavaPlugin {
         try {
             provider = new QueueManager183();
         } catch (Throwable ignore) {}
-    }
-
-    @Override
-    public void onEnable() {
-
     }
 
     public static void setupConfig() {
