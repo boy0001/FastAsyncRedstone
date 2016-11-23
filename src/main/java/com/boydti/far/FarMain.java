@@ -23,6 +23,7 @@ public class FarMain extends JavaPlugin {
     }
 
     static {
+        System.out.println("[FastAsyncRedstone] Injecting custom classes");
         setupConfig();
         try {
             provider = new QueueManager111();
