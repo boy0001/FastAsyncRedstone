@@ -1,25 +1,25 @@
-package com.boydti.far.v110.blocks;
+package com.boydti.far.v111.blocks;
 
 import com.boydti.far.FarMain;
 import com.boydti.far.MutableBlockRedstoneEvent;
 import com.boydti.far.ReflectionUtil;
-import com.boydti.far.v110.QueueManager110;
+import com.boydti.far.v111.QueueManager111;
 import com.boydti.fawe.object.RunnableVal;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import net.minecraft.server.v1_10_R1.BaseBlockPosition;
-import net.minecraft.server.v1_10_R1.Block;
-import net.minecraft.server.v1_10_R1.BlockPosition;
-import net.minecraft.server.v1_10_R1.BlockPosition.MutableBlockPosition;
-import net.minecraft.server.v1_10_R1.BlockRedstoneWire;
-import net.minecraft.server.v1_10_R1.Chunk;
-import net.minecraft.server.v1_10_R1.EnumDirection;
-import net.minecraft.server.v1_10_R1.IBlockAccess;
-import net.minecraft.server.v1_10_R1.IBlockData;
-import net.minecraft.server.v1_10_R1.IBlockState;
-import net.minecraft.server.v1_10_R1.SoundEffectType;
-import net.minecraft.server.v1_10_R1.World;
+import net.minecraft.server.v1_11_R1.BaseBlockPosition;
+import net.minecraft.server.v1_11_R1.Block;
+import net.minecraft.server.v1_11_R1.BlockPosition;
+import net.minecraft.server.v1_11_R1.BlockPosition.MutableBlockPosition;
+import net.minecraft.server.v1_11_R1.BlockRedstoneWire;
+import net.minecraft.server.v1_11_R1.Chunk;
+import net.minecraft.server.v1_11_R1.EnumDirection;
+import net.minecraft.server.v1_11_R1.IBlockAccess;
+import net.minecraft.server.v1_11_R1.IBlockData;
+import net.minecraft.server.v1_11_R1.IBlockState;
+import net.minecraft.server.v1_11_R1.SoundEffectType;
+import net.minecraft.server.v1_11_R1.World;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bukkit.Bukkit;
 
@@ -32,10 +32,10 @@ public class Wire extends BlockRedstoneWire {
     private static final EnumDirection[] facings;
     private static final BaseBlockPosition[] surroundingBlocksOffset;
     private boolean g;
-    private final QueueManager110 provider;
+    private final QueueManager111 provider;
     private final MutableBlockRedstoneEvent event;
 
-    public Wire(QueueManager110 provider) throws NoSuchFieldException {
+    public Wire(QueueManager111 provider) throws NoSuchFieldException {
         this.provider = provider;
         this.turnOff = new LinkedHashSet<>();
         this.turnOn = new LinkedHashSet<>();
@@ -44,7 +44,7 @@ public class Wire extends BlockRedstoneWire {
         this.c(0.0f);
         this.a(SoundEffectType.d);
         this.c("redstoneDust");
-        this.q();
+        this.p();
         this.event = new MutableBlockRedstoneEvent();
         Bukkit.getServer().getScheduler().runTask(FarMain.get(), new Runnable() {
             @Override
@@ -97,7 +97,12 @@ public class Wire extends BlockRedstoneWire {
     }
 
     public void doPhysics(World world, BlockPosition pos) {
-        world.e(pos, this);
+        world.a(pos.west(), this, pos);
+        world.a(pos.east(), this, pos);
+        world.a(pos.down(), this, pos);
+        world.a(pos.up(), this, pos);
+        world.a(pos.north(), this, pos);
+        world.a(pos.south(), this, pos);
     }
     
     private BlockPosition add(MutableBlockPosition pos, BaseBlockPosition pos1, BaseBlockPosition pos2) {
@@ -361,7 +366,7 @@ public class Wire extends BlockRedstoneWire {
     public void onPlace(final World world, final BlockPosition blockposition, final IBlockData iblockdata) {
         this.handleUpdate(world, blockposition, iblockdata);
         for (final EnumDirection enumdirection : EnumDirection.EnumDirectionLimit.VERTICAL) {
-            world.applyPhysics(blockposition.shift(enumdirection), this);
+            world.applyPhysics(blockposition.shift(enumdirection), this, false);
         }
         for (final EnumDirection enumdirection : EnumDirection.EnumDirectionLimit.HORIZONTAL) {
             this.b(world, blockposition.shift(enumdirection));
@@ -380,7 +385,7 @@ public class Wire extends BlockRedstoneWire {
     public void remove(final World world, final BlockPosition blockposition, final IBlockData iblockdata) {
         super.remove(world, blockposition, iblockdata);
         for (final EnumDirection enumdirection : EnumDirection.values()) {
-            world.applyPhysics(blockposition.shift(enumdirection), this);
+            world.applyPhysics(blockposition.shift(enumdirection), this, false);
         }
         this.handleUpdate(world, blockposition, iblockdata);
         for (final EnumDirection enumdirection2 : EnumDirection.EnumDirectionLimit.HORIZONTAL) {
@@ -397,7 +402,7 @@ public class Wire extends BlockRedstoneWire {
     }
     
     @Override
-    public void a(final IBlockData iblockdata, final World world, final BlockPosition blockposition, final Block block) {
+    public void a(final IBlockData iblockdata, final World world, final BlockPosition blockposition, final Block block, BlockPosition blockposition1) {
         if (this.canPlace(world, blockposition)) {
             this.handleUpdate(world, blockposition, iblockdata);
         } else {
@@ -429,30 +434,27 @@ public class Wire extends BlockRedstoneWire {
         facingsVertical = new EnumDirection[] { EnumDirection.DOWN, EnumDirection.UP };
         facings = (EnumDirection[]) ArrayUtils.addAll((Object[]) Wire.facingsVertical, (Object[]) Wire.facingsHorizontal);
         final Set<BaseBlockPosition> set = new LinkedHashSet<>();
-        set.add(new BlockPosition(1, 0, 0));
-        set.add(new BlockPosition(-1, 0, 0));
-        set.add(new BlockPosition(0, 1, 0));
-        set.add(new BlockPosition(0, -1, 0));
-        set.add(new BlockPosition(1, 1, 0));
-        set.add(new BlockPosition(-1, 1, 0));
-        set.add(new BlockPosition(1, -1, 0));
-        set.add(new BlockPosition(-1, -1, 0));
-        set.add(new BlockPosition(0, 1, 1));
-        set.add(new BlockPosition(0, 1, -1));
-        set.add(new BlockPosition(0, -1, 1));
-        set.add(new BlockPosition(0, -1, -1));
-        set.add(new BlockPosition(0, 0, 1));
-        set.add(new BlockPosition(0, 0, -1));
+//        set.add(new BlockPosition(1, 0, 0));
+//        set.add(new BlockPosition(-1, 0, 0));
+//        set.add(new BlockPosition(0, 1, 0));
+//        set.add(new BlockPosition(0, -1, 0));
+//        set.add(new BlockPosition(1, 1, 0));
+//        set.add(new BlockPosition(-1, 1, 0));
+//        set.add(new BlockPosition(1, -1, 0));
+//        set.add(new BlockPosition(-1, -1, 0));
+//        set.add(new BlockPosition(0, 1, 1));
+//        set.add(new BlockPosition(0, 1, -1));
+//        set.add(new BlockPosition(0, -1, 1));
+//        set.add(new BlockPosition(0, -1, -1));
+//        set.add(new BlockPosition(0, 0, 1));
+//        set.add(new BlockPosition(0, 0, -1));
         Set<BaseBlockPosition> set2 = new LinkedHashSet<>();
         for (final EnumDirection facing : Wire.facings) {
             set.add(ReflectionUtil.<BaseBlockPosition> getOfT((Object) facing, BaseBlockPosition.class));
         }
         for (final EnumDirection facing2 : Wire.facings) {
             final BaseBlockPosition v1 = ReflectionUtil.<BaseBlockPosition> getOfT(facing2, BaseBlockPosition.class);
-            for (final EnumDirection facing3 : Wire.facings) {
-                final BaseBlockPosition v2 = ReflectionUtil.<BaseBlockPosition> getOfT(facing3, BaseBlockPosition.class);
-                set.add(new BlockPosition(v1.getX() + v2.getX(), v1.getY() + v2.getY(), v1.getZ() + v2.getZ()));
-            }
+            set.add(v1);
         }
         set.remove(BlockPosition.ZERO);
         surroundingBlocksOffset = set.<BaseBlockPosition> toArray(new BaseBlockPosition[set.size()]);

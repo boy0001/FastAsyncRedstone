@@ -1,6 +1,7 @@
 package com.boydti.far;
 
 import com.boydti.far.v110.QueueManager110;
+import com.boydti.far.v111.QueueManager111;
 import com.boydti.far.v183.QueueManager183;
 import com.boydti.fawe.FaweVersion;
 import java.io.File;
@@ -25,10 +26,14 @@ public class FarMain extends JavaPlugin {
     public void onEnable() {
         setupConfig();
         try {
+            this.provider = new QueueManager111();
+        } catch (Throwable ignore) {}
+        try {
             this.provider = new QueueManager110();
-        } catch (Throwable ignore) {
+        } catch (Throwable ignore) {}
+        try {
             this.provider = new QueueManager183();
-        }
+        } catch (Throwable ignore) {}
 
     }
 
