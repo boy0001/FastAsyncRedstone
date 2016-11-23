@@ -11,39 +11,42 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class FarMain extends JavaPlugin {
     
-    private QueueManager provider;
+    private static QueueManager provider;
     private static FarMain instance;
-
-    public FarMain() {
-        instance = this;
-    }
 
     public static FarMain get() {
         return instance;
     }
 
-    @Override
-    public void onEnable() {
+    public FarMain() {
+        instance = this;
+    }
+
+    static {
         setupConfig();
         try {
-            this.provider = new QueueManager111();
+            provider = new QueueManager111();
         } catch (Throwable ignore) {}
         try {
-            this.provider = new QueueManager110();
+            provider = new QueueManager110();
         } catch (Throwable ignore) {}
         try {
-            this.provider = new QueueManager183();
+            provider = new QueueManager183();
         } catch (Throwable ignore) {}
+    }
+
+    @Override
+    public void onEnable() {
 
     }
 
-    public void setupConfig() {
-        File file = new File(getDataFolder(), "config.yml");
+    public static void setupConfig() {
+        File file = new File("plugins/FastAsyncRedstone/config.yml");
         RedstoneSettings.load(file);
         RedstoneSettings.save(file);
         RedstoneSettings.PLATFORM = "bukkit";
         try {
-            InputStream stream = getClass().getResourceAsStream("/fawe.properties");
+            InputStream stream = FarMain.class.getResourceAsStream("/fawe.properties");
             java.util.Scanner scanner = new java.util.Scanner(stream).useDelimiter("\\A");
             String versionString = scanner.next().trim();
             scanner.close();
