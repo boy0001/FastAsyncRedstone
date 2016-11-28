@@ -7,6 +7,7 @@ import com.boydti.fawe.FaweVersion;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Date;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class FarMain extends JavaPlugin {
@@ -31,6 +32,12 @@ public class FarMain extends JavaPlugin {
         try {
             provider = new QueueManager183();
         } catch (Throwable ignore) {}
+        Bukkit.getServer().getScheduler().runTask(this, new Runnable() {
+            @Override
+            public void run() {
+                MutableBlockRedstoneEvent.INSTANCE.recalculateListeners();
+            }
+        });
     }
 
     public static void setupConfig() {

@@ -5,7 +5,8 @@ import com.boydti.far.RedstoneSettings;
 import com.boydti.far.ReflectionUtil;
 import com.boydti.far.v110.blocks.Lamp;
 import com.boydti.far.v110.blocks.Piston;
-import com.boydti.far.v110.blocks.Torch;
+import com.boydti.far.v110.blocks.TorchOff;
+import com.boydti.far.v110.blocks.TorchOn;
 import com.boydti.far.v110.blocks.Wire;
 import com.google.common.collect.UnmodifiableIterator;
 import net.minecraft.server.v1_10_R1.Block;
@@ -25,12 +26,8 @@ public class QueueManager110 extends QueueManager {
 
     public QueueManager110() {
         if (RedstoneSettings.OPTIMIZE_DEVICES.REDSTONE_WIRE) {
-            try {
-                add(55, "redstone_wire", new Wire(this));
-                ReflectionUtil.setStatic("REDSTONE_WIRE", Blocks.class, get("redstone_wire"));
-            } catch (NoSuchFieldException e) {
-                e.printStackTrace();
-            }
+            add(55, "redstone_wire", new Wire(this));
+            ReflectionUtil.setStatic("REDSTONE_WIRE", Blocks.class, get("redstone_wire"));
         }
         if (RedstoneSettings.OPTIMIZE_DEVICES.REDSTONE_LAMP) {
             add(123, "redstone_lamp", new Lamp(false, this));
@@ -49,11 +46,11 @@ public class QueueManager110 extends QueueManager {
             ReflectionUtil.setStatic("PISTON", Blocks.class, get("piston"));
         }
         if (RedstoneSettings.OPTIMIZE_DEVICES.UNLIT_REDSTONE_TORCH) {
-            add(75, "unlit_redstone_torch", new Torch(this, false));
+            add(75, "unlit_redstone_torch", new TorchOff(this, false));
             ReflectionUtil.setStatic("UNLIT_REDSTONE_TORCH", Blocks.class, get("unlit_redstone_torch"));
         }
         if (RedstoneSettings.OPTIMIZE_DEVICES.REDSTONE_TORCH) {
-            add(76, "redstone_torch", new Torch(this, true));
+            add(76, "redstone_torch", new TorchOn(this, true));
             ReflectionUtil.setStatic("REDSTONE_TORCH", Blocks.class, get("redstone_torch"));
         }
     }

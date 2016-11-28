@@ -5,7 +5,8 @@ import com.boydti.far.RedstoneSettings;
 import com.boydti.far.ReflectionUtil;
 import com.boydti.far.v183.blocks.Lamp;
 import com.boydti.far.v183.blocks.Piston;
-import com.boydti.far.v183.blocks.Torch;
+import com.boydti.far.v183.blocks.TorchOff;
+import com.boydti.far.v183.blocks.TorchOn;
 import com.boydti.far.v183.blocks.Wire;
 import com.google.common.collect.UnmodifiableIterator;
 import java.lang.reflect.Field;
@@ -57,13 +58,13 @@ public class QueueManager183 extends QueueManager {
             ReflectionUtil.setStatic("PISTON", Blocks.class, get("piston"));
         }
         if (RedstoneSettings.OPTIMIZE_DEVICES.UNLIT_REDSTONE_TORCH) {
-            Block block = new Torch(this, false);
+            Block block = new TorchOff(this, false);
             add(75, "unlit_redstone_torch", block);
             ReflectionUtil.setStatic("UNLIT_REDSTONE_TORCH", Blocks.class, get("unlit_redstone_torch"));
             addItem(block);
         }
         if (RedstoneSettings.OPTIMIZE_DEVICES.REDSTONE_TORCH) {
-            Torch block = new Torch(this, true);
+            Block block = new TorchOn(this, true);
             add(76, "redstone_torch", block);
             ReflectionUtil.setStatic("REDSTONE_TORCH", Blocks.class, get("redstone_torch"));
             addItem(block);

@@ -9,6 +9,16 @@ import org.bukkit.plugin.RegisteredListener;
 
 public class MutableBlockRedstoneEvent extends BlockRedstoneEvent {
 
+    public static MutableBlockRedstoneEvent INSTANCE;
+
+    static {
+        try {
+            INSTANCE = new MutableBlockRedstoneEvent();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+    }
+
     private RegisteredListener[] listeners;
     private final Field fieldBlock;
     private int oldCurrent;

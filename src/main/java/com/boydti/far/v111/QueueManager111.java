@@ -5,7 +5,8 @@ import com.boydti.far.RedstoneSettings;
 import com.boydti.far.ReflectionUtil;
 import com.boydti.far.v111.blocks.Lamp;
 import com.boydti.far.v111.blocks.Piston;
-import com.boydti.far.v111.blocks.Torch;
+import com.boydti.far.v111.blocks.TorchOff;
+import com.boydti.far.v111.blocks.TorchOn;
 import com.boydti.far.v111.blocks.Wire;
 import com.google.common.collect.UnmodifiableIterator;
 import net.minecraft.server.v1_11_R1.Block;
@@ -49,11 +50,11 @@ public class QueueManager111 extends QueueManager {
             ReflectionUtil.setStatic("PISTON", Blocks.class, get("piston"));
         }
         if (RedstoneSettings.OPTIMIZE_DEVICES.UNLIT_REDSTONE_TORCH) {
-            add(75, "unlit_redstone_torch", new Torch(this, false));
+            add(75, "unlit_redstone_torch", new TorchOff(this, false));
             ReflectionUtil.setStatic("UNLIT_REDSTONE_TORCH", Blocks.class, get("unlit_redstone_torch"));
         }
         if (RedstoneSettings.OPTIMIZE_DEVICES.REDSTONE_TORCH) {
-            add(76, "redstone_torch", new Torch(this, true));
+            add(76, "redstone_torch", new TorchOn(this, true));
             ReflectionUtil.setStatic("REDSTONE_TORCH", Blocks.class, get("redstone_torch"));
         }
     }

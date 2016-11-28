@@ -1,6 +1,5 @@
 package com.boydti.far.v183.blocks;
 
-import com.boydti.far.FarMain;
 import com.boydti.far.MutableBlockRedstoneEvent;
 import com.boydti.far.ReflectionUtil;
 import com.boydti.far.v183.QueueManager183;
@@ -22,7 +21,6 @@ import net.minecraft.server.v1_8_R3.IBlockData;
 import net.minecraft.server.v1_8_R3.IBlockState;
 import net.minecraft.server.v1_8_R3.World;
 import org.apache.commons.lang3.ArrayUtils;
-import org.bukkit.Bukkit;
 
 public class Wire extends BlockRedstoneWire {
     private final LinkedHashSet<BlockPosition> turnOff;
@@ -34,7 +32,6 @@ public class Wire extends BlockRedstoneWire {
     private static final BaseBlockPosition[] surroundingBlocksOffset;
     private boolean Q;
     private final QueueManager183 provider;
-    private final MutableBlockRedstoneEvent event;
 
     public Wire(QueueManager183 provider) throws NoSuchFieldException {
         this.provider = provider;
@@ -46,13 +43,6 @@ public class Wire extends BlockRedstoneWire {
         this.a(Block.e);
         this.c("redstoneDust");
         this.K();
-        this.event = new MutableBlockRedstoneEvent();
-        Bukkit.getServer().getScheduler().runTask(FarMain.get(), new Runnable() {
-            @Override
-            public void run() {
-                Wire.this.event.recalculateListeners();
-            }
-        });
     }
 
     private BlockPosition getImmutable(BlockPosition pos) {
@@ -129,8 +119,8 @@ public class Wire extends BlockRedstoneWire {
             wirePower--;
             int newPower = Math.max(blockPower, wirePower);
             if (oldPower != newPower) {
-                this.event.call(world.getWorld(), pos.getX(), pos.getY(), pos.getZ(), oldPower, newPower);
-                newPower = event.getNewCurrent();
+                MutableBlockRedstoneEvent.INSTANCE.call(world.getWorld(), pos.getX(), pos.getY(), pos.getZ(), oldPower, newPower);
+                newPower = MutableBlockRedstoneEvent.INSTANCE.getNewCurrent();
             }
             if (newPower < oldPower) {
                 if ((blockPower > 0) && (!this.turnOn.contains(pos))) {
@@ -158,8 +148,8 @@ public class Wire extends BlockRedstoneWire {
             wirePower--;
             int newPower = Math.max(blockPower, wirePower);
             if (oldPower != newPower) {
-                this.event.call(world.getWorld(), pos.getX(), pos.getY(), pos.getZ(), oldPower, newPower);
-                newPower = event.getNewCurrent();
+                MutableBlockRedstoneEvent.INSTANCE.call(world.getWorld(), pos.getX(), pos.getY(), pos.getZ(), oldPower, newPower);
+                newPower = MutableBlockRedstoneEvent.INSTANCE.getNewCurrent();
             }
             if (newPower > oldPower) {
                 state = setWireState(world, pos, state, newPower);
