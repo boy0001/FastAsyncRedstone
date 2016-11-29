@@ -32,6 +32,10 @@ public class FarMain extends JavaPlugin {
         try {
             provider = new QueueManager183();
         } catch (Throwable ignore) {}
+    }
+
+    @Override
+    public void onEnable() {
         Bukkit.getServer().getScheduler().runTask(this, new Runnable() {
             @Override
             public void run() {
