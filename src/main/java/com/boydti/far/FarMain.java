@@ -25,13 +25,17 @@ public class FarMain extends JavaPlugin {
         setupConfig();
         try {
             provider = new QueueManager111();
+            return;
         } catch (Throwable ignore) {}
         try {
             provider = new QueueManager110();
+            return;
         } catch (Throwable ignore) {}
         try {
             provider = new QueueManager183();
+            return;
         } catch (Throwable ignore) {}
+        System.out.println("[FastAsyncRedstone] Failed!");
     }
 
     @Override
