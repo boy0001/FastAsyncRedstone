@@ -4,14 +4,13 @@ import com.boydti.fawe.example.CharFaweChunk;
 import com.boydti.fawe.example.NMSMappedFaweQueue;
 import com.boydti.fawe.util.MathMan;
 import com.boydti.fawe.util.SetQueue;
-import com.boydti.fawe.util.TaskManager;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 
 public class QueueManager {
@@ -22,8 +21,10 @@ public class QueueManager {
     public final BlockPos mutableBlockPos = new BlockPos();
     public final Object present = new Object();
 
-    public QueueManager() {
-        TaskManager.IMP.repeat(new Runnable() {
+    public QueueManager() {}
+
+    public void start() {
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(FarMain.get(), new Runnable() {
             @Override
             public void run() {
                 if (updateBlocks || blockQueueWorlds.isEmpty()) {
@@ -34,10 +35,10 @@ public class QueueManager {
                 final HashMap<World, Map<Long, Character>> sendBlocks = blockQueueWorlds;
                 blockQueueWorlds = new HashMap<>();
                 lightQueueWorlds = new HashMap<>();
-                TaskManager.IMP.async(new Runnable() {
+                Bukkit.getScheduler().runTaskAsynchronously(FarMain.get(), new Runnable() {
                     @Override
                     public void run() {
-                        for (Entry<World, Map<Long, Character>> entry : sendBlocks.entrySet()) {
+                        for (Map.Entry<World, Map<Long, Character>> entry : sendBlocks.entrySet()) {
                             World world = entry.getKey();
                             NMSMappedFaweQueue queue = (NMSMappedFaweQueue) SetQueue.IMP.getNewQueue(world.getName(), true, false);
                             Map<Long, Map<Short, Object>> updateLightQueue = updateLight.get(world);
@@ -45,7 +46,7 @@ public class QueueManager {
                                 updateBlockLight(queue, updateLightQueue);
                             }
                             queue.startSet(true);
-                            for (Entry<Long, Character> entry2 : entry.getValue().entrySet()) {
+                            for (Map.Entry<Long, Character> entry2 : entry.getValue().entrySet()) {
                                 Long pair = entry2.getKey();
                                 int cx = MathMan.unpairIntX(pair);
                                 int cz = MathMan.unpairIntY(pair);
@@ -62,7 +63,7 @@ public class QueueManager {
                     }
                 });
             }
-        }, RedstoneSettings.QUEUE.INTERVAL);
+        }, 0, RedstoneSettings.QUEUE.INTERVAL);
     }
     
     public void updateBlockLight(NMSMappedFaweQueue queue, Map<Long, Map<Short, Object>> map) {

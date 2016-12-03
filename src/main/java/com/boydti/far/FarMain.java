@@ -26,15 +26,18 @@ public class FarMain extends JavaPlugin {
         try {
             provider = new QueueManager111();
             return;
-        } catch (Throwable ignore) {}
+        } catch (Throwable ignore) {
+        }
         try {
             provider = new QueueManager110();
             return;
-        } catch (Throwable ignore) {}
+        } catch (Throwable ignore) {
+        }
         try {
             provider = new QueueManager183();
             return;
-        } catch (Throwable ignore) {}
+        } catch (Throwable ignore) {
+        }
         System.out.println("[FastAsyncRedstone] Failed!");
     }
 
@@ -46,6 +49,7 @@ public class FarMain extends JavaPlugin {
                 MutableBlockRedstoneEvent.INSTANCE.recalculateListeners();
             }
         });
+        provider.start();
     }
 
     public static void setupConfig() {
