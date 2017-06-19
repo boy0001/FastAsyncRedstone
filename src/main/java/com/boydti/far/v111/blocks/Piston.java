@@ -271,11 +271,6 @@ public class Piston extends BlockPiston {
     }
     
     @Override
-    public void a(IBlockData iblockdata, World world, BlockPosition blockposition, AxisAlignedBB axisalignedbb, List<AxisAlignedBB> list, @Nullable Entity entity) {
-        a(blockposition, axisalignedbb, list, iblockdata.c(world, blockposition));
-    }
-    
-    @Override
     public boolean b(IBlockData iblockdata) {
         return false;
     }
