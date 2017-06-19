@@ -63,8 +63,8 @@ public class FarMain extends JavaPlugin {
     public static void setupConfig() {
     	redstoneSettings = new RedstoneSettings();
         File file = new File("plugins/FastAsyncRedstone/config.yml");
-        redstoneSettings.load(file);
-        redstoneSettings.save(file);
+        redstoneSettings.load(file, true);
+        redstoneSettings.save(file, true);
         RedstoneSettings.PLATFORM = "bukkit";
         try {
             InputStream stream = FarMain.class.getResourceAsStream("/fawe.properties");

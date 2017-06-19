@@ -44,11 +44,11 @@ public class RedstoneSettings extends Config {
         public static boolean REDSTONE_TORCH = true;
     }
 
-    public void save(File file) {
+    public void save(File file, boolean a) {
         save(file);
     }
     
-    public boolean load(File file) {
+    public boolean load(File file, boolean a) {
         return load(file);
     }
 }
