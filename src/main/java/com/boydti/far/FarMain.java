@@ -2,6 +2,7 @@ package com.boydti.far;
 
 import com.boydti.far.v110.QueueManager110;
 import com.boydti.far.v111.QueueManager111;
+import com.boydti.far.v112.QueueManager112;
 import com.boydti.far.v183.QueueManager183;
 import com.boydti.fawe.FaweVersion;
 import java.io.File;
@@ -23,6 +24,11 @@ public class FarMain extends JavaPlugin {
         instance = this;
         System.out.println("[FastAsyncRedstone] Injecting custom classes");
         setupConfig();
+        try {
+            provider = new QueueManager112();
+            return;
+        } catch (Throwable ignore) {
+        }
         try {
             provider = new QueueManager111();
             return;

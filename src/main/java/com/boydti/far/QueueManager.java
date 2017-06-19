@@ -36,11 +36,12 @@ public class QueueManager {
                 blockQueueWorlds = new HashMap<>();
                 lightQueueWorlds = new HashMap<>();
                 Bukkit.getScheduler().runTaskAsynchronously(FarMain.get(), new Runnable() {
-                    @Override
+                    @SuppressWarnings("deprecation")
+					@Override
                     public void run() {
                         for (Map.Entry<World, Map<Long, Character>> entry : sendBlocks.entrySet()) {
                             World world = entry.getKey();
-                            NMSMappedFaweQueue queue = (NMSMappedFaweQueue) SetQueue.IMP.getNewQueue(world.getName(), true, false);
+                            NMSMappedFaweQueue<?, ?, ?, ?> queue = (NMSMappedFaweQueue<?, ?, ?, ?>) SetQueue.IMP.getNewQueue(world.getName(), true, false);
                             Map<Long, Map<Short, Object>> updateLightQueue = updateLight.get(world);
                             if (updateLightQueue != null) {
                                 updateBlockLight(queue, updateLightQueue);
@@ -51,7 +52,7 @@ public class QueueManager {
                                 int cx = MathMan.unpairIntX(pair);
                                 int cz = MathMan.unpairIntY(pair);
                                 char bitMask = entry2.getValue();
-                                CharFaweChunk chunk = (CharFaweChunk) queue.getFaweChunk(cx, cz);
+                                CharFaweChunk<?, ?> chunk = (CharFaweChunk<?, ?>) queue.getFaweChunk(cx, cz);
                                 chunk.setBitMask(bitMask);
                                 try {
                                     queue.refreshChunk(chunk);
@@ -66,7 +67,7 @@ public class QueueManager {
         }, 0, RedstoneSettings.QUEUE.INTERVAL);
     }
     
-    public void updateBlockLight(NMSMappedFaweQueue queue, Map<Long, Map<Short, Object>> map) {
+    public void updateBlockLight(NMSMappedFaweQueue<?, ?, ?, ?> queue, Map<Long, Map<Short, Object>> map) {
         int size = map.size();
         if (size == 0) {
             return;
@@ -92,8 +93,6 @@ public class QueueManager {
                 int y = lo & 0xFF;
                 int x = (hi & 0xF) + bx;
                 int z = ((hi >> 4) & 0xF) + bz;
-                int lcx = x & 0xF;
-                int lcz = z & 0xF;
                 int oldLevel = queue.getEmmittedLight(x, y, z);
                 int newLevel = queue.getBrightness(x, y, z);
                 if (oldLevel != newLevel) {
@@ -145,7 +144,7 @@ public class QueueManager {
         }
     }
 
-    private void computeRemoveBlockLight(NMSMappedFaweQueue world, int x, int y, int z, int currentLight, Queue<Object[]> queue, Queue<BlockPos> spreadQueue, Map<BlockPos, Object> visited,
+    private void computeRemoveBlockLight(NMSMappedFaweQueue<?, ?, ?, ?> world, int x, int y, int z, int currentLight, Queue<Object[]> queue, Queue<BlockPos> spreadQueue, Map<BlockPos, Object> visited,
     Map<BlockPos, Object> spreadVisited) {
         int current = world.getEmmittedLight(x, y, z);
         if (current != 0 && current < currentLight) {
@@ -168,7 +167,7 @@ public class QueueManager {
         }
     }
     
-    private void computeSpreadBlockLight(NMSMappedFaweQueue world, int x, int y, int z, int currentLight, Queue<BlockPos> queue, Map<BlockPos, Object> visited) {
+    private void computeSpreadBlockLight(NMSMappedFaweQueue<?, ?, ?, ?> world, int x, int y, int z, int currentLight, Queue<BlockPos> queue, Map<BlockPos, Object> visited) {
         currentLight = currentLight - Math.max(1, world.getOpacity(x, y, z));
         if (currentLight > 0) {
             int current = world.getEmmittedLight(x, y, z);
@@ -185,10 +184,10 @@ public class QueueManager {
         }
     }
 
-    public <T extends Map> T getMap(Map<World, T> worldMap, World world) {
+    public <T extends Map<?, ?>> T getMap(Map<World, T> worldMap, World world) {
         T map = worldMap.get(world);
         if (map == null) {
-            map = (T) new HashMap();
+            map = (T) new HashMap<Object, Object>();
             worldMap.put(world, map);
         }
         return map;
