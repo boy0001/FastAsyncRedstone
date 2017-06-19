@@ -57,10 +57,11 @@ public class FarMain extends JavaPlugin {
             }
         });
         provider.start();
-        redstoneSettings = new RedstoneSettings();
+        
     }
 
     public static void setupConfig() {
+    	redstoneSettings = new RedstoneSettings();
         File file = new File("plugins/FastAsyncRedstone/config.yml");
         redstoneSettings.load(file);
         redstoneSettings.save(file);
