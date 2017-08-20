@@ -2,6 +2,7 @@ package com.boydti.far;
 
 import com.boydti.far.v110.QueueManager110;
 import com.boydti.far.v111.QueueManager111;
+import com.boydti.far.v112.QueueManager112;
 import com.boydti.far.v183.QueueManager183;
 import com.boydti.fawe.FaweVersion;
 import java.io.File;
@@ -14,6 +15,7 @@ public class FarMain extends JavaPlugin {
     
     private QueueManager provider;
     private static FarMain instance;
+    private static RedstoneSettings redstoneSettings;
 
     public static FarMain get() {
         return instance;
@@ -23,6 +25,11 @@ public class FarMain extends JavaPlugin {
         instance = this;
         System.out.println("[FastAsyncRedstone] Injecting custom classes");
         setupConfig();
+        try {
+            provider = new QueueManager112();
+            return;
+        } catch (Throwable ignore) {
+        }
         try {
             provider = new QueueManager111();
             return;
@@ -50,12 +57,14 @@ public class FarMain extends JavaPlugin {
             }
         });
         provider.start();
+        
     }
 
     public static void setupConfig() {
+    	redstoneSettings = new RedstoneSettings();
         File file = new File("plugins/FastAsyncRedstone/config.yml");
-        RedstoneSettings.load(file);
-        RedstoneSettings.save(file);
+        redstoneSettings.load(file, true);
+        redstoneSettings.save(file, true);
         RedstoneSettings.PLATFORM = "bukkit";
         try {
             InputStream stream = FarMain.class.getResourceAsStream("/fawe.properties");

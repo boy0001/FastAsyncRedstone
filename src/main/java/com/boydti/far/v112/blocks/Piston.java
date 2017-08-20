@@ -1,16 +1,48 @@
-package com.boydti.far.v111.blocks;
+package com.boydti.far.v112.blocks;
 
-import com.boydti.far.v111.QueueManager111;
+import com.boydti.far.v112.QueueManager112;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+
+import net.minecraft.server.v1_12_R1.AxisAlignedBB;
+import net.minecraft.server.v1_12_R1.Block;
+import net.minecraft.server.v1_12_R1.BlockDirectional;
+import net.minecraft.server.v1_12_R1.BlockPiston;
+import net.minecraft.server.v1_12_R1.BlockPistonExtension;
+import net.minecraft.server.v1_12_R1.BlockPistonExtension.EnumPistonType;
+import net.minecraft.server.v1_12_R1.BlockPistonMoving;
+import net.minecraft.server.v1_12_R1.BlockPosition;
+import net.minecraft.server.v1_12_R1.BlockStateBoolean;
+import net.minecraft.server.v1_12_R1.BlockStateList;
+import net.minecraft.server.v1_12_R1.Blocks;
+import net.minecraft.server.v1_12_R1.CreativeModeTab;
+import net.minecraft.server.v1_12_R1.Entity;
+import net.minecraft.server.v1_12_R1.EntityLiving;
+import net.minecraft.server.v1_12_R1.EnumBlockMirror;
+import net.minecraft.server.v1_12_R1.EnumBlockRotation;
+import net.minecraft.server.v1_12_R1.EnumDirection;
+import net.minecraft.server.v1_12_R1.EnumPistonReaction;
+import net.minecraft.server.v1_12_R1.IBlockAccess;
+import net.minecraft.server.v1_12_R1.IBlockData;
+import net.minecraft.server.v1_12_R1.IBlockState;
+import net.minecraft.server.v1_12_R1.ItemStack;
+import net.minecraft.server.v1_12_R1.MathHelper;
+import net.minecraft.server.v1_12_R1.PistonExtendsChecker;
+import net.minecraft.server.v1_12_R1.SoundCategory;
+import net.minecraft.server.v1_12_R1.SoundEffectType;
+import net.minecraft.server.v1_12_R1.SoundEffects;
+import net.minecraft.server.v1_12_R1.TileEntity;
+import net.minecraft.server.v1_12_R1.TileEntityPiston;
+import net.minecraft.server.v1_12_R1.World;
+
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
 import javax.annotation.Nullable;
-import net.minecraft.server.v1_11_R1.*;
-import net.minecraft.server.v1_11_R1.BlockPistonExtension.EnumPistonType;
-import org.bukkit.craftbukkit.v1_11_R1.block.CraftBlock;
+
+import org.bukkit.craftbukkit.v1_12_R1.block.CraftBlock;
 import org.bukkit.event.block.BlockPistonEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
@@ -24,10 +56,10 @@ public class Piston extends BlockPiston {
     protected static final AxisAlignedBB e = new AxisAlignedBB(0.0D, 0.0D, 0.25D, 1.0D, 1.0D, 1.0D);
     protected static final AxisAlignedBB f = new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 0.75D, 1.0D);
     protected static final AxisAlignedBB g = new AxisAlignedBB(0.0D, 0.25D, 0.0D, 1.0D, 1.0D, 1.0D);
-    private final QueueManager111 provider;
+    private final QueueManager112 provider;
     private final boolean sticky;
     
-    public Piston(boolean flag, QueueManager111 provider) {
+    public Piston(boolean flag, QueueManager112 provider) {
         super(flag);
         w(this.blockStateList.getBlockData().set(FACING, EnumDirection.NORTH).set(EXTENDED, Boolean.valueOf(false)));
         a(SoundEffectType.d);
@@ -107,7 +139,7 @@ public class Piston extends BlockPiston {
                     TileEntity tileentity1 = world.getTileEntity(blockposition1);
                     if ((tileentity1 instanceof TileEntityPiston)) {
                         TileEntityPiston tileentitypiston = (TileEntityPiston) tileentity1;
-                        if ((tileentitypiston.f() == enumdirection) && (tileentitypiston.e())) {
+                        if ((tileentitypiston.h() == enumdirection) && (tileentitypiston.f())) {
                             tileentitypiston.i();
                             flag1 = true;
                         }
@@ -115,7 +147,7 @@ public class Piston extends BlockPiston {
                 }
                 if ((!flag1)
                 && (a(iblockdata1, world, blockposition1, enumdirection.opposite(), false))
-                && ((iblockdata1.p() == EnumPistonReaction.NORMAL) || (block == Blocks.PISTON) || (block == Blocks.STICKY_PISTON))) {
+                && ((iblockdata1.o() == EnumPistonReaction.NORMAL) || (block == Blocks.PISTON) || (block == Blocks.STICKY_PISTON))) {
                     a(world, blockposition, enumdirection, false);
                 }
             } else {
@@ -140,16 +172,16 @@ public class Piston extends BlockPiston {
             
             for (int list1 = 0; list1 < list.size(); ++list1) {
                 BlockPosition j = list.get(list1);
-                arraylist.add(world.getType(j).b((IBlockAccess) world, j));
+                arraylist.add(world.getType(j).c((IBlockAccess) world, j));
             }
             
-            List var23 = pistonextendschecker.getBrokenBlocks();
+            List<BlockPosition> var23 = pistonextendschecker.getBrokenBlocks();
             int var24 = list.size() + var23.size();
             IBlockData[] aiblockdata = new IBlockData[var24];
             EnumDirection enumdirection1 = flag ? enumdirection : enumdirection.opposite();
             final org.bukkit.block.Block bblock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-            final List moved = pistonextendschecker.getMovedBlocks();
-            final List broken = pistonextendschecker.getBrokenBlocks();
+            final List<BlockPosition> moved = pistonextendschecker.getMovedBlocks();
+            final List<BlockPosition> broken = pistonextendschecker.getBrokenBlocks();
             AbstractList blocks = new AbstractList() {
                 @Override
                 public int size() {
@@ -217,7 +249,7 @@ public class Piston extends BlockPiston {
                 BlockPosition blockposition3 = blockposition.shift(enumdirection);
                 if (flag) {
                     EnumPistonType l = this.sticky ? EnumPistonType.STICKY : EnumPistonType.DEFAULT;
-                    iblockdata = Blocks.PISTON_HEAD.getBlockData().set(BlockPistonExtension.FACING, enumdirection).set(BlockPistonExtension.TYPE, l);
+                    iblockdata = Blocks.PISTON_HEAD.getBlockData().set(BlockDirectional.FACING, enumdirection).set(BlockPistonExtension.TYPE, l);
                     IBlockData iblockdata1 = Blocks.PISTON_EXTENSION.getBlockData().set(BlockPistonMoving.FACING, enumdirection)
                     .set(BlockPistonMoving.TYPE, this.sticky ? EnumPistonType.STICKY : EnumPistonType.DEFAULT);
                     provider.updateBlockFast(world, blockposition3, iblockdata1, Piston.this, true, 4);
@@ -326,7 +358,7 @@ public class Piston extends BlockPiston {
     }
     
     @Nullable
-    public static EnumDirection e(int i) {
+    public static EnumDirection f(int i) {
         int j = i & 0x7;
         return j > 5 ? null : EnumDirection.fromType1(j);
     }
@@ -358,10 +390,10 @@ public class Piston extends BlockPiston {
                     if (iblockdata.b(world, blockposition) == -1.0F) {
                         return false;
                     }
-                    if (iblockdata.p() == EnumPistonReaction.BLOCK) {
+                    if (iblockdata.o() == EnumPistonReaction.BLOCK) {
                         return false;
                     }
-                    if (iblockdata.p() == EnumPistonReaction.DESTROY) {
+                    if (iblockdata.o() == EnumPistonReaction.DESTROY) {
                         return flag;
                     }
                 } else if (iblockdata.get(EXTENDED).booleanValue()) {
@@ -377,7 +409,7 @@ public class Piston extends BlockPiston {
     
     @Override
     public IBlockData fromLegacyData(int i) {
-        return getBlockData().set(FACING, e(i)).set(EXTENDED, Boolean.valueOf((i & 0x8) > 0));
+        return getBlockData().set(FACING, f(i)).set(EXTENDED, Boolean.valueOf((i & 0x8) > 0));
     }
     
     @Override
